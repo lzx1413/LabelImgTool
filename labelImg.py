@@ -5,12 +5,14 @@ import os.path
 import re
 import sys
 import subprocess
-
+import requests
+import urllib
 from functools import partial
 from collections import defaultdict
 
 from PyQt4.QtGui import *
 from PyQt4.QtCore import *
+import time
 
 import resources
 
@@ -52,6 +54,8 @@ class MainWindow(QMainWindow, WindowMixin):
     def __init__(self, filename=None):
         super(MainWindow, self).__init__()
         self.setWindowTitle(__appname__)
+        #online database
+        self.database_url = 'http://123.57.188.226/'
         # Save as Pascal voc xml
         self.defaultSaveDir = None
         self.usingPascalVocFormat = True
@@ -62,6 +66,8 @@ class MainWindow(QMainWindow, WindowMixin):
         self.dirname = None
         self.labelHist = []
         self.lastOpenDir = None
+        date = time.strftime('%Y_%m_%d_%H',time.localtime(time.time()))
+        self.loadFilePath = 'database/pics/'+date+'/'
 
         # Whether we need to save or not.
         self.dirty = False
@@ -136,6 +142,7 @@ class MainWindow(QMainWindow, WindowMixin):
 
         opendir = action('&Open Dir', self.openDir,
                 'Ctrl+u', 'open', u'Open Dir')
+        loadImages = action('&Get Images',self.loadImages,'Ctrl+l',icon='open',tip=u'load images')
 
         changeSavedir = action('&Change default saved Annotation dir', self.changeSavedir,
                 'Ctrl+r', 'open', u'Change default saved Annotation dir')
@@ -242,7 +249,7 @@ class MainWindow(QMainWindow, WindowMixin):
 
         # Store actions for further handling.
         self.actions = struct(save=save, saveAs=saveAs, open=open, close=close,
-                lineColor=color1, fillColor=color2,
+                lineColor=color1, fillColor=color2,loadImages=loadImages,
                 create=create, delete=delete, edit=edit, copy=copy,
                 createMode=createMode, editMode=editMode, advancedMode=advancedMode,
                 shapeLineColor=shapeLineColor, shapeFillColor=shapeFillColor,
@@ -285,6 +292,7 @@ class MainWindow(QMainWindow, WindowMixin):
 
         self.tools = self.toolbar('Tools')
         self.actions.beginner = (
+            loadImages,
             open, opendir, openNextImg, openPrevImg, save, None, create, copy, delete, None,
             zoomIn, zoom, zoomOut, fitWindow, fitWidth)
 
@@ -355,6 +363,19 @@ class MainWindow(QMainWindow, WindowMixin):
         self.populateModeActions()
 
     ## Support Functions ##
+    def loadImages(self):
+        print 'load image finished'
+        if not os.path.exists(self.loadFilePath):
+            os.makedirs(self.loadFilePath)
+        image_file = requests.get(self.database_url+'image.list')
+        image_list =  image_file.content.split('\n')
+        for image_name in image_list[0:-2]:
+            print self.database_url+image_name
+            print self.loadFilePath+image_name
+            urllib.urlretrieve(self.database_url+image_name,self.loadFilePath+image_name)
+        print 'load images from '+self.database_url
+
+
 
     def noShapes(self):
         return not self.itemsToShapes
