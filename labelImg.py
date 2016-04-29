@@ -1,14 +1,11 @@
 #!/usr/bin/env python
 # -*- coding: utf8 -*-
 import _init_path
-import thread
-import threading
 import os.path
 import re
 import sys
 import subprocess
 import requests
-import urllib
 from functools import partial
 from collections import defaultdict
 
@@ -16,6 +13,7 @@ from PyQt4.QtGui import *
 from PyQt4.QtCore import *
 import time
 import MyDialog
+import ImageManagement
 
 import resources
 
@@ -30,19 +28,6 @@ from toolBar import ToolBar
 from pascal_voc_io import PascalVocReader
 
 __appname__ = 'labelImg'
-
-
-class loadImageThread(threading.Thread):
-    def __init__(self, website, image_list, FilePath):
-        threading.Thread.__init__(self)
-        self.website = website
-        self.filepath = FilePath
-        self.image_list = image_list
-
-    def run(self):
-        for image_url in self.image_list:
-            print image_url
-            urllib.urlretrieve(self.website + image_url, self.filepath + image_url)
 
 
 ### Utility functions and classes.
@@ -71,8 +56,19 @@ class MainWindow(QMainWindow, WindowMixin):
     def __init__(self, filename=None):
         super(MainWindow, self).__init__()
         self.setWindowTitle(__appname__)
+        # info display
+        self.display_timer = QTimer()
+        self.display_timer.start(1000)
+        QObject.connect(self.display_timer,SIGNAL("timeout()"),self.info_display)
         # online database
         self.database_url = None
+        self.connect_remote_db = False
+        self.dowload_thread_num = 4
+        self.server_image_num = 0
+        self.dowload_image_num = 0
+        self.process_image_num = 0
+
+
         # Save as Pascal voc xml
         self.defaultSaveDir = None
         self.usingPascalVocFormat = True
@@ -116,8 +112,11 @@ class MainWindow(QMainWindow, WindowMixin):
         self.editButton.setToolButtonStyle(Qt.ToolButtonTextBesideIcon)
         self.labelListContainer = QWidget()
         self.labelListContainer.setLayout(listLayout)
+        self.info_txt = QTextEdit()
+
         listLayout.addWidget(self.editButton)  # , 0, Qt.AlignCenter)
         listLayout.addWidget(self.labelList)
+        listLayout.addWidget(self.info_txt)
 
         self.dock = QDockWidget(u'Box Labels', self)
         self.dock.setObjectName(u'Labels')
@@ -158,9 +157,10 @@ class MainWindow(QMainWindow, WindowMixin):
 
         opendir = action('&Open Dir', self.openDir,
                          'Ctrl+u', 'open', u'Open Dir')
-        set_reomte_url = action('&Set Remote Url', self.setRemoteUrl,
+        remote_settings = action('&Remote DB Settings', self.setRemoteUrl,
                                 'Ctrl+m', u'set remote url')
         loadOnlineImages = action('&Get Images', self.loadOnlineImages, 'Ctrl+l', icon='open', tip=u'load images')
+
 
         changeSavedir = action('&Change default saved Annotation dir', self.changeSavedir,
                                'Ctrl+r', 'open', u'Change default saved Annotation dir')
@@ -235,6 +235,8 @@ class MainWindow(QMainWindow, WindowMixin):
                           checkable=True, enabled=False)
         # Group zoom controls into a list for easier toggling.
         zoomActions = (self.zoomWidget, zoomIn, zoomOut, zoomOrg, fitWindow, fitWidth)
+        #Group remote image manage
+        remoteActions = (loadOnlineImages,remote_settings)
         self.zoomMode = self.MANUAL_ZOOM
         self.scalers = {
             self.FIT_WINDOW: self.scaleFitWindow,
@@ -267,7 +269,7 @@ class MainWindow(QMainWindow, WindowMixin):
 
         # Store actions for further handling.
         self.actions = struct(save=save, saveAs=saveAs, open=open, close=close,
-                              lineColor=color1, fillColor=color2, loadOnlineImages=loadOnlineImages,
+                              lineColor=color1, fillColor=color2, remote_mode=(loadOnlineImages,loadOnlineImages),
                               create=create, delete=delete, edit=edit, copy=copy,
                               createMode=createMode, editMode=editMode, advancedMode=advancedMode,
                               shapeLineColor=shapeLineColor, shapeFillColor=shapeFillColor,
@@ -290,9 +292,10 @@ class MainWindow(QMainWindow, WindowMixin):
             help=self.menu('&Help'),
             recentFiles=QMenu('Open &Recent'),
             labelList=labelMenu)
-
+        for item in self.actions.remote_mode:
+            item.setEnabled(False)
         addActions(self.menus.file,
-                   (open, opendir, changeSavedir, openAnnotation, self.menus.recentFiles, save, saveAs, set_reomte_url,
+                   (open, opendir, changeSavedir, openAnnotation, self.menus.recentFiles, save, saveAs, remote_settings,
                     close, None, quit))
         addActions(self.menus.help, (help,))
         addActions(self.menus.view, (
@@ -319,7 +322,6 @@ class MainWindow(QMainWindow, WindowMixin):
             open, save, None,
             createMode, editMode, None,
             hideAll, showAll)
-
         self.statusBar().showMessage('%s started.' % __appname__)
         self.statusBar().show()
 
@@ -332,6 +334,7 @@ class MainWindow(QMainWindow, WindowMixin):
         self.fillColor = None
         self.zoom_level = 100
         self.fit_window = False
+        self.remoteMode = False
 
         # XXX: Could be completely declarative.
         # Restore application settings.
@@ -381,24 +384,41 @@ class MainWindow(QMainWindow, WindowMixin):
         self.zoomWidget.valueChanged.connect(self.paintCanvas)
 
         self.populateModeActions()
-
+    ##infomation display
+    def info_display(self):
+        self.dowload_image_num = len(self.mImgList)
+        info = 'server image num:\t'+str(self.server_image_num)+'\n'\
+        +'dowload image num:\t'+str(self.dowload_image_num)+'\n'\
+        +'precessed image num:\t'+str(self.process_image_num)
+        self.info_txt.setText(info)
     ## Support Functions ##
     def loadOnlineImages(self):
-        if not os.path.exists(self.loadFilePath):
-            os.makedirs(self.loadFilePath)
-        image_file = requests.get(self.database_url + 'image.list')
-        image_list = image_file.content.split('\n')
-        t = loadImageThread(self.database_url, image_list[0:-1], self.loadFilePath)
-        t.start()
+        if self.image_list:
+            t = ImageManagement.loadImageThread(self.database_url, self.image_list,self.mImgList, self.loadFilePath)
+            ImageManagement.loadOnlineImgMul(self.database_url,self.image_list,2,self.mImgList,self.loadFilePath)
+            while 1:
+                if self.mImgList:
+                    self.dirname = self.loadFilePath
+                    self.openNextImg()
+                    break
 
     def setRemoteUrl(self):
         setRemoteUrldialog = MyDialog.SetRemoteDialog(parent=self)
         if setRemoteUrldialog.exec_():
-            self.database_url = setRemoteUrldialog.get_remote_url()
+            self.database_url = 'http://'+setRemoteUrldialog.get_remote_url()
+            self.remoteMode = setRemoteUrldialog.is_in_remote_mode()
+            self.dowload_thread_num = setRemoteUrldialog.get_thread_num()
         setRemoteUrldialog.destroy()
         print self.database_url
-
-
+        if not os.path.exists(self.loadFilePath):
+            os.makedirs(self.loadFilePath)
+        if self.database_url:
+            image_file = requests.get(self.database_url + 'image.list')
+            self.image_list = image_file.content.split('\n')[0:-1]
+            self.server_image_num = len(self.image_list)
+            if self.image_list:
+                self.connect_remote_db = True
+                self.toggleRemoteMode()
 
     def noShapes(self):
         return not self.itemsToShapes
@@ -411,10 +431,14 @@ class MainWindow(QMainWindow, WindowMixin):
         if value:
             self.actions.createMode.setEnabled(True)
             self.actions.editMode.setEnabled(False)
+            self.actions.remotemode
             self.dock.setFeatures(self.dock.features() | self.dockFeatures)
         else:
             self.dock.setFeatures(self.dock.features() ^ self.dockFeatures)
 
+    def toggleRemoteMode(self):
+        for item in self.actions.remote_mode:
+            item.setEnabled(True)
     def populateModeActions(self):
         if self.beginner():
             tool, menu = self.actions.beginner, self.actions.beginnerContext
@@ -613,11 +637,13 @@ class MainWindow(QMainWindow, WindowMixin):
                 print 'savePascalVocFormat save to:' + filename
                 lf.savePascalVocFormat(filename, shapes, unicode(self.filename), self.imageData,
                                        self.lineColor.getRgb(), self.fillColor.getRgb())
+                self.process_image_num +=1
             else:
                 lf.save(filename, shapes, unicode(self.filename), self.imageData,
                         self.lineColor.getRgb(), self.fillColor.getRgb())
                 self.labelFile = lf
                 self.filename = filename
+                self.process_image_num +=1
             return True
         except LabelFileError, e:
             self.errorMessage(u'Error saving label data',
@@ -929,6 +955,9 @@ class MainWindow(QMainWindow, WindowMixin):
             currIndex = self.mImgList.index(self.filename)
             if currIndex + 1 < len(self.mImgList):
                 filename = self.mImgList[currIndex + 1]
+            else:
+                QMessageBox.about(self, "no more images !", "this is the last image")
+                return
 
         if filename:
             self.loadFile(filename)
