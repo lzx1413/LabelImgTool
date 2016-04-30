@@ -8,6 +8,7 @@ import subprocess
 import requests
 from functools import partial
 from collections import defaultdict
+import logging
 
 from PyQt4.QtGui import *
 from PyQt4.QtCore import *
@@ -67,6 +68,7 @@ class MainWindow(QMainWindow, WindowMixin):
         self.server_image_num = 0
         self.dowload_image_num = 0
         self.process_image_num = 0
+        self.server_image_list = None
 
 
         # Save as Pascal voc xml
@@ -408,12 +410,18 @@ class MainWindow(QMainWindow, WindowMixin):
             self.database_url = 'http://'+setRemoteUrldialog.get_remote_url()
             self.remoteMode = setRemoteUrldialog.is_in_remote_mode()
             self.dowload_thread_num = setRemoteUrldialog.get_thread_num()
+            self.server_image_list = setRemoteUrldialog.get_server_image_list()
         setRemoteUrldialog.destroy()
         print self.database_url
         if not os.path.exists(self.loadFilePath):
             os.makedirs(self.loadFilePath)
         if self.database_url:
-            image_file = requests.get(self.database_url + 'image.list')
+            try:
+                image_file = requests.get(self.database_url + self.server_image_list)
+            except requests.URLRequired,e:
+                logging.error('can not get the server image list')
+                return
+
             self.image_list = image_file.content.split('\n')[0:-1]
             self.server_image_num = len(self.image_list)
             if self.image_list:

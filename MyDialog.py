@@ -7,6 +7,7 @@ class SetRemoteDialog(QtGui.QDialog):
     remote_mode = True
     remote_url = ""
     dowload_thead_num = 4
+    server_image_list = None
 
     def __init__(self, parent=None):
         QtGui.QDialog.__init__(self, parent)
@@ -28,6 +29,11 @@ class SetRemoteDialog(QtGui.QDialog):
         if self.__class__.remote_url:
             self.remote_url_line.setText(self.__class__.remote_url)
         grid.addWidget(self.remote_url_line, 2, 1, 1, 1)
+        grid.addWidget(QtGui.QLabel(u'remote image list', parent=self), 3, 0, 1, 1)
+        self.server_image_list = QtGui.QLineEdit(parent=self)
+        if self.__class__.server_image_list:
+            self.server_image_list.setText(self.__class__.server_image_list)
+        grid.addWidget(self.server_image_list, 3, 1, 1, 1)
         buttonBox = QtGui.QDialogButtonBox(parent=self)
         buttonBox.setOrientation(QtCore.Qt.Horizontal)
         buttonBox.setStandardButtons(QtGui.QDialogButtonBox.Cancel | QtGui.QDialogButtonBox.Ok)
@@ -65,6 +71,12 @@ class SetRemoteDialog(QtGui.QDialog):
 
     def is_in_remote_mode(self):
         return self.__class__.remote_mode
+
+    def get_server_image_list(self):
+        if self.server_image_list is not None:
+            return self.server_image_list.text()
+        else:
+            QtGui.QMessageBox.about(self, "server image list!", "the server image list is None!")
 
     def get_remote_url(self):
         origin_url = self.remote_url_line.text()
