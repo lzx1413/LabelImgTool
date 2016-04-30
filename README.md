@@ -74,6 +74,16 @@ The annotation will be saved to the folder you specifiy
 
 * p : Previous image
 
+### Online Image Data Mode
+the server have to make the images in a folder that clint can get from http/https with **get** function
+1. settings
+open File -->RemoteDBSettings(ctrl+m) like that
+![](screenshot/remote_settings.JPG)
+the remote image list is a file contenting the name of the images (a line is a image) the image will be cached in a folder
+created in the software file named database/pics/XXXX and this will take a lot of memory if there are a lot of images,and this
+will be modified in the future
+open File   -->ChangedDefaultSavedAnnotationDir(ctrl+r) to set the folder to save the results
+2. if your settings are right,you will find the **Get Images** button becomes enabled and click it ,then you can annotate the images as before
 ### How to contribute
 Send a pull request
 
