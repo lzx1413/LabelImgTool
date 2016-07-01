@@ -19,7 +19,6 @@ class LabelFile(object):
         self.imageData = None
         if filename is not None:
             self.load(filename)
-
     def load(self, filename):
         try:
             with open(filename, 'rb') as f:
@@ -53,7 +52,7 @@ class LabelFile(object):
             raise LabelFileError(e)
 
     def savePascalVocFormat(self, filename, shapes, imagePath, imageData,
-            lineColor=None, fillColor=None, databaseSrc=None):
+            lineColor=None, fillColor=None, databaseSrc=None,shape_type_ = 'RECT'):
         imgFolderPath = os.path.dirname(imagePath)
         imgFolderName = os.path.split(imgFolderPath)[-1]
         imgFileName = os.path.basename(imagePath)
@@ -62,13 +61,19 @@ class LabelFile(object):
         img = cv2.imread(imagePath)
         imageShape = img.shape
         writer = PascalVocWriter(imgFolderName, imgFileNameWithoutExt,\
-                                 imageShape, localImgPath=imagePath)
+                                 imageShape, localImgPath=imagePath,shape_type=shape_type_)
         bSave = False
         for shape in shapes:
             points = shape['points']
             label = shape['label']
-            bndbox = LabelFile.convertPoints2BndBox(points)
-            writer.addBndBox(bndbox[0], bndbox[1], bndbox[2], bndbox[3], label)
+            if shape['shape_type'] == 0:
+                print 'add rects'
+                bndbox = LabelFile.convertPoints2BndBox(points)
+                writer.addBndBox(bndbox[0], bndbox[1], bndbox[2], bndbox[3], label)
+            if shape['shape_type'] == 1:
+                print 'add polygons'
+                writer.addPolygon(points,label)
+
             bSave = True
 
         if bSave:

@@ -21,12 +21,14 @@ class Canvas(QWidget):
     drawingPolygon = pyqtSignal(bool)
 
     CREATE, EDIT = range(2)
+    RECT_SHAPE, POLYGON_SHAPE=range(2)
 
     epsilon = 11.0
 
     def __init__(self, *args, **kwargs):
         super(Canvas, self).__init__(*args, **kwargs)
         # Initialise local state.
+        self.shape_type = self.POLYGON_SHAPE
         self.mode = self.EDIT
         self.shapes = []
         self.current = None
@@ -50,7 +52,18 @@ class Canvas(QWidget):
         # Set widget options.
         self.setMouseTracking(True)
         self.setFocusPolicy(Qt.WheelFocus)
-
+    def set_shape_type(self, type):
+        if type == 0:
+            self.shape_type = self.RECT_SHAPE
+            self.line.set_shape_type(type)
+            return True
+        elif type == 1:
+            self.shape_type = self.POLYGON_SHAPE
+            self.line.set_shape_type(type)
+            return True
+        else:
+            print "not support the shape type: "+str(type)
+            return False
     def enterEvent(self, ev):
         self.overrideCursor(self._cursor)
 
@@ -172,7 +185,12 @@ class Canvas(QWidget):
         pos = self.transformPos(ev.posF())
         if ev.button() == Qt.LeftButton:
             if self.drawing():
-                if self.current and self.current.reachMaxPoints() is False:
+                if self.shape_type == self.POLYGON_SHAPE and self.current:
+                    self.current.addPoint(self.line[1])
+                    if self.current.isClosed():
+                        self.finalise()
+                    self.line[0] = self.current[-1]
+                elif self.shape_type == self.RECT_SHAPE and self.current and self.current.reachMaxPoints() is False:
                     initPos = self.current[0]
                     minX = initPos.x()
                     minY = initPos.y()
@@ -187,7 +205,7 @@ class Canvas(QWidget):
                     if self.current.isClosed():
                         self.finalise()
                 elif not self.outOfPixmap(pos):
-                    self.current = Shape()
+                    self.current = Shape(shape_type = self.shape_type)
                     self.current.addPoint(pos)
                     self.line.points = [pos, pos]
                     self.setHiding()
@@ -292,18 +310,19 @@ class Canvas(QWidget):
         shiftPos = pos - point
         shape.moveVertexBy(index, shiftPos)
 
-        lindex = (index + 1) % 4
-        rindex = (index + 3) % 4
-        lshift = None
-        rshift = None
-        if index % 2 == 0:
-            rshift = QPointF(shiftPos.x(), 0)
-            lshift = QPointF(0, shiftPos.y())
-        else:
-            lshift = QPointF(shiftPos.x(), 0)
-            rshift = QPointF(0, shiftPos.y())
-        shape.moveVertexBy(rindex, rshift)
-        shape.moveVertexBy(lindex, lshift)
+        if self.shape_type == self.RECT_SHAPE:
+            lindex = (index + 1) % 4
+            rindex = (index + 3) % 4
+            lshift = None
+            rshift = None
+            if index % 2 == 0:
+                rshift = QPointF(shiftPos.x(), 0)
+                lshift = QPointF(0, shiftPos.y())
+            else:
+                lshift = QPointF(shiftPos.x(), 0)
+                rshift = QPointF(0, shiftPos.y())
+            shape.moveVertexBy(rindex, rshift)
+            shape.moveVertexBy(lindex, lshift)
 
     def boundedMoveShape(self, shape, pos):
         if self.outOfPixmap(pos):
@@ -398,7 +417,8 @@ class Canvas(QWidget):
             p.setPen(color)
             brush = QBrush(Qt.BDiagPattern)
             p.setBrush(brush)
-            p.drawRect(leftTop.x(), leftTop.y(), rectWidth, rectHeight)
+            if self.shape_type == self.RECT_SHAPE:
+                p.drawRect(leftTop.x(), leftTop.y(), rectWidth, rectHeight)
 
         p.end()
 

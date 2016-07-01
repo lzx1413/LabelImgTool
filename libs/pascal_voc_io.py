@@ -5,13 +5,14 @@ from xml.dom import minidom
 from lxml import etree
 
 class PascalVocWriter:
-    def __init__(self, foldername, filename, imgSize, databaseSrc='Unknown', localImgPath=None):
+    def __init__(self, foldername, filename, imgSize, databaseSrc='Unknown', localImgPath=None,shape_type = None):
         self.foldername = foldername
         self.filename = filename
         self.databaseSrc = databaseSrc
         self.imgSize = imgSize
         self.boxlist = []
         self.localImgPath = localImgPath
+        self.shape_type = shape_type
 
     def prettify(self, elem):
         """
@@ -40,6 +41,7 @@ class PascalVocWriter:
         filename.text = self.filename
 
         localImgPath = SubElement(top,'path')
+        self.localImgPath = self.localImgPath.split('/')[-1]
         localImgPath.text = self.localImgPath
 
         source = SubElement(top,'source')
@@ -59,13 +61,25 @@ class PascalVocWriter:
 
         segmented = SubElement(top,'segmented')
         segmented.text ='0'
-
+        shape_type = SubElement(top,'shape_type')
+        shape_type.text = self.shape_type
         return top
 
     def addBndBox(self, xmin, ymin, xmax, ymax, name):
         bndbox = {'xmin':xmin, 'ymin':ymin, 'xmax':xmax, 'ymax':ymax}
         bndbox['name'] = name
-        self.boxlist.append(bndbox);
+        self.boxlist.append(bndbox)
+    def addPolygon(self,shape,name):
+        polygon = {}
+        i = 0
+        for point in shape:
+            polygon[i] = point
+            i  = i+1
+        polygon['name'] = name
+        polygon['point_num'] =str(len(shape))
+        print 'point num is ' ,str(len(shape))
+        self.boxlist.append(polygon)
+
 
     def appendObjects(self, top):
         for each_object in self.boxlist:
@@ -78,15 +92,23 @@ class PascalVocWriter:
             truncated.text = "0"
             difficult = SubElement(object_item, 'difficult')
             difficult.text = "0"
-            bndbox = SubElement(object_item, 'bndbox')
-            xmin = SubElement(bndbox, 'xmin')
-            xmin.text = str(each_object['xmin'])
-            ymin = SubElement(bndbox, 'ymin')
-            ymin.text = str(each_object['ymin'])
-            xmax = SubElement(bndbox, 'xmax')
-            xmax.text = str(each_object['xmax'])
-            ymax = SubElement(bndbox, 'ymax')
-            ymax.text = str(each_object['ymax'])
+            if self.shape_type == 'RECT':
+                bndbox = SubElement(object_item, 'bndbox')
+                xmin = SubElement(bndbox, 'xmin')
+                xmin.text = str(each_object['xmin'])
+                ymin = SubElement(bndbox, 'ymin')
+                ymin.text = str(each_object['ymin'])
+                xmax = SubElement(bndbox, 'xmax')
+                xmax.text = str(each_object['xmax'])
+                ymax = SubElement(bndbox, 'ymax')
+                ymax.text = str(each_object['ymax'])
+            elif self.shape_type == 'POLYGON':
+                polygon = SubElement(object_item,'polygon')
+                for i in xrange(int(each_object['point_num'])):
+                    point = SubElement(polygon,'point'+str(i))
+                    point.text = str(int(each_object[i][0]))+','+str(int(each_object[i][1]))
+                    print i,point.text
+   
 
     def save(self, targetFile = None):
         root = self.genXML()
@@ -96,8 +118,9 @@ class PascalVocWriter:
             out_file = open(self.filename + '.xml','w')
         else:
             out_file = open(targetFile, 'w')
-
+        print root
         out_file.write(self.prettify(root))
+       ##out_file.write(root)
         out_file.close()
 
 

@@ -57,13 +57,15 @@ class MainWindow(QMainWindow, WindowMixin):
     def __init__(self, filename=None):
         super(MainWindow, self).__init__()
         self.setWindowTitle(__appname__)
+        #shape type
+        self.shape_type = 'RECT'
         # info display
         self.display_timer = QTimer()
         self.display_timer.start(1000)
         QObject.connect(self.display_timer,SIGNAL("timeout()"),self.info_display)
         # online database
         self.database_url = None
-        self.connect_remote_db = False
+        self.connect_remote_db = None
         self.dowload_thread_num = 4
         self.server_image_num = 0
         self.dowload_image_num = 0
@@ -163,6 +165,7 @@ class MainWindow(QMainWindow, WindowMixin):
                                 'Ctrl+m', u'set remote url')
         loadOnlineImages = action('&Get Images', self.loadOnlineImages, 'Ctrl+l', icon='open', tip=u'load images')
 
+        createpolygon = action('&Create\nPolygon',self.createPolygon,'Ctrl+p',icon = 'new',tip=u'create polygon',enabled = False)
 
         changeSavedir = action('&Change default saved Annotation dir', self.changeSavedir,
                                'Ctrl+r', 'open', u'Change default saved Annotation dir')
@@ -188,16 +191,16 @@ class MainWindow(QMainWindow, WindowMixin):
         color2 = action('Box &Fill Color', self.chooseColor2,
                         'Ctrl+Shift+L', 'color', u'Choose Box fill color')
 
-        createMode = action('Create\nRectBox', self.setCreateMode,
+        createMode = action('Create\nShape', self.setCreateMode,
                             'Ctrl+N', 'new', u'Start drawing Boxs', enabled=False)
         editMode = action('&Edit\nRectBox', self.setEditMode,
                           'Ctrl+J', 'edit', u'Move and edit Boxs', enabled=False)
 
-        create = action('Create\nRectBox', self.createShape,
+        create = action('Create\nRectBox', self.createRect,
                         'Ctrl+N', 'new', u'Draw a new Box', enabled=False)
-        delete = action('Delete\nRectBox', self.deleteSelectedShape,
+        delete = action('Delete\nShape', self.deleteSelectedShape,
                         'Delete', 'delete', u'Delete', enabled=False)
-        copy = action('&Duplicate\nRectBox', self.copySelectedShape,
+        copy = action('&Duplicate\nShape', self.copySelectedShape,
                       'Ctrl+D', 'copy', u'Create a duplicate of the selected Box',
                       enabled=False)
 
@@ -205,10 +208,10 @@ class MainWindow(QMainWindow, WindowMixin):
                               'Ctrl+Shift+A', 'expert', u'Switch to advanced mode',
                               checkable=True)
 
-        hideAll = action('&Hide\nRectBox', partial(self.togglePolygons, False),
+        hideAll = action('&Hide\nShape', partial(self.togglePolygons, False),
                          'Ctrl+H', 'hide', u'Hide all Boxs',
                          enabled=False)
-        showAll = action('&Show\nRectBox', partial(self.togglePolygons, True),
+        showAll = action('&Show\nShape', partial(self.togglePolygons, True),
                          'Ctrl+A', 'hide', u'Show all Boxs',
                          enabled=False)
 
@@ -272,7 +275,7 @@ class MainWindow(QMainWindow, WindowMixin):
         # Store actions for further handling.
         self.actions = struct(save=save, saveAs=saveAs, open=open, close=close,
                               lineColor=color1, fillColor=color2, remote_mode=(loadOnlineImages,loadOnlineImages),
-                              create=create, delete=delete, edit=edit, copy=copy,
+                              create=create, delete=delete, edit=edit, copy=copy,createpolygon = createpolygon,
                               createMode=createMode, editMode=editMode, advancedMode=advancedMode,
                               shapeLineColor=shapeLineColor, shapeFillColor=shapeFillColor,
                               zoom=zoom, zoomIn=zoomIn, zoomOut=zoomOut, zoomOrg=zoomOrg,
@@ -281,10 +284,10 @@ class MainWindow(QMainWindow, WindowMixin):
                               fileMenuActions=(open, opendir, save, saveAs, close, quit),
                               beginner=(), advanced=(),
                               editMenu=(edit, copy, delete, None, color1, color2),
-                              beginnerContext=(create, edit, copy, delete),
-                              advancedContext=(createMode, editMode, edit, copy,
+                              beginnerContext=(create,createpolygon, edit, copy, delete),
+                              advancedContext=(createMode,createpolygon, editMode, edit, copy,
                                                delete, shapeLineColor, shapeFillColor),
-                              onLoadActive=(close, create, createMode, editMode),
+                              onLoadActive=(close, create, createMode, createpolygon,editMode),
                               onShapesPresent=(saveAs, hideAll, showAll))
 
         self.menus = struct(
@@ -317,7 +320,7 @@ class MainWindow(QMainWindow, WindowMixin):
         self.tools = self.toolbar('Tools')
         self.actions.beginner = (
             loadOnlineImages,
-            open, opendir, openNextImg, openPrevImg, save, None, create, copy, delete, None,
+            open, opendir, openNextImg, openPrevImg, save, None, create,createpolygon, copy, delete, None,
             zoomIn, zoom, zoomOut, fitWindow, fitWidth)
 
         self.actions.advanced = (
@@ -394,6 +397,10 @@ class MainWindow(QMainWindow, WindowMixin):
         +'precessed image num:\t'+str(self.process_image_num)
         self.info_txt.setText(info)
     ## Support Functions ##
+    def createPolygon(self):
+        self.shape_type = 'POLYGON'
+        self.canvas.set_shape_type(1)
+        self.createShape()
     def loadOnlineImages(self):
         if self.image_list:
             t = ImageManagement.loadImageThread(self.database_url, self.image_list,self.mImgList, self.loadFilePath)
@@ -477,6 +484,7 @@ class MainWindow(QMainWindow, WindowMixin):
         self.dirty = False
         self.actions.save.setEnabled(False)
         self.actions.create.setEnabled(True)
+        self.actions.createpolygon.setEnabled(True)
 
     def toggleActions(self, value=True):
         """Enable/Disable widgets which depend on an opened image."""
@@ -522,11 +530,17 @@ class MainWindow(QMainWindow, WindowMixin):
     ## Callbacks ##
     def tutorial(self):
         subprocess.Popen([self.screencastViewer, self.screencast])
+    def createRect(self):
+        self.shape_type = 'RECT'
+        self.canvas.set_shape_type(0)
+        self.createShape()
+
 
     def createShape(self):
         assert self.beginner()
         self.canvas.setEditing(False)
         self.actions.create.setEnabled(False)
+        self.actions.createpolygon.setEnabled(False)
 
     def toggleDrawingSensitive(self, drawing=True):
         """In the middle of drawing, toggling between modes should be disabled."""
@@ -537,6 +551,7 @@ class MainWindow(QMainWindow, WindowMixin):
             self.canvas.setEditing(True)
             self.canvas.restoreCursor()
             self.actions.create.setEnabled(True)
+            self.actions.createpolygon.setEnabled(True)
 
     def toggleDrawMode(self, edit=True):
         self.canvas.setEditing(edit)
@@ -636,7 +651,7 @@ class MainWindow(QMainWindow, WindowMixin):
                             if s.line_color != self.lineColor else None,
                         fill_color=s.fill_color.getRgb() \
                             if s.fill_color != self.fillColor else None,
-                        points=[(p.x(), p.y()) for p in s.points])
+                        points=[(p.x(), p.y()) for p in s.points],shape_type = s.shape_type)
 
         shapes = [format_shape(shape) for shape in self.canvas.shapes]
         # Can add differrent annotation formats here
@@ -644,7 +659,7 @@ class MainWindow(QMainWindow, WindowMixin):
             if self.usingPascalVocFormat is True:
                 print 'savePascalVocFormat save to:' + filename
                 lf.savePascalVocFormat(filename, shapes, unicode(self.filename), self.imageData,
-                                       self.lineColor.getRgb(), self.fillColor.getRgb())
+                                       self.lineColor.getRgb(), self.fillColor.getRgb(),shape_type_ = self.shape_type)
                 self.process_image_num +=1
             else:
                 lf.save(filename, shapes, unicode(self.filename), self.imageData,
@@ -693,6 +708,7 @@ class MainWindow(QMainWindow, WindowMixin):
             if self.beginner():  # Switch to edit mode.
                 self.canvas.setEditing(True)
                 self.actions.create.setEnabled(True)
+                self.actions.createpolygon.setEnabled(True)
             else:
                 self.actions.editMode.setEnabled(True)
             self.setDirty()
@@ -737,10 +753,10 @@ class MainWindow(QMainWindow, WindowMixin):
     def togglePolygons(self, value):
         for item, shape in self.itemsToShapes.iteritems():
             item.setCheckState(Qt.Checked if value else Qt.Unchecked)
-
     def loadFile(self, filename=None):
         """Load the specified file, or the last opened file if None."""
         self.resetState()
+#        filename = filename.replace('\\','/')
         self.canvas.setEnabled(False)
         if filename is None:
             filename = self.settings['filename']

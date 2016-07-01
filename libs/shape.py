@@ -15,7 +15,7 @@ DEFAULT_HVERTEX_FILL_COLOR = QColor(255, 0, 0)
 
 class Shape(object):
     P_SQUARE, P_ROUND = range(2)
-
+    RECT_SHAPE, POLYGON_SHAPE=range(2)
     MOVE_VERTEX, NEAR_VERTEX = range(2)
 
     ## The following class variables influence the drawing
@@ -29,13 +29,16 @@ class Shape(object):
     point_type = P_ROUND
     point_size = 8
     scale = 1.0
-
-    def __init__(self, label=None, line_color=None):
+    def __init__(self, label=None,shape_type = 0, line_color=None):
         self.label = label
         self.points = []
         self.fill = False
         self.selected = False
-
+        self.shape_type = self.RECT_SHAPE
+        self.max_piont_num = 4
+        if shape_type == 1:
+            self.shape_type = self.POLYGON_SHAPE
+            self.max_piont_num = 100
         self._highlightIndex = None
         self._highlightMode = self.NEAR_VERTEX
         self._highlightSettings = {
@@ -50,14 +53,20 @@ class Shape(object):
             # with an object attribute. Currently this
             # is used for drawing the pending line a different color.
             self.line_color = line_color
+    def set_shape_type(self,type):
+        self.shape_type = type
 
     def close(self):
         assert len(self.points) > 2
         self._closed = True
-
+        print len(self.points)
+    def isRect(self):
+        return self.shape_type == self.RECT_SHAPE
+    def isPolygon(self):
+        return self.shape_type == self.POLYGON_SHAPE
     def reachMaxPoints(self):
-        if len(self.points) >=4:
-            return True
+        if len(self.points) >=self.max_piont_num:
+                 return True
         return False
 
     def addPoint(self, point):
@@ -78,34 +87,34 @@ class Shape(object):
         self._closed = False
 
     def paint(self, painter):
-        if self.points:
-            color = self.select_line_color if self.selected else self.line_color
-            pen = QPen(color)
-            # Try using integer sizes for smoother drawing(?)
-            pen.setWidth(max(1, int(round(2.0 / self.scale))))
-            painter.setPen(pen)
+        print "painting"
+        color = self.select_line_color if self.selected else self.line_color
+        pen = QPen(color)
+        # Try using integer sizes for smoother drawing(?)
+        pen.setWidth(max(1, int(round(2.0 / self.scale))))
+        painter.setPen(pen)
 
-            line_path = QPainterPath()
-            vrtx_path = QPainterPath()
+        line_path = QPainterPath()
+        vrtx_path = QPainterPath()
 
-            line_path.moveTo(self.points[0])
+        line_path.moveTo(self.points[0])
             # Uncommenting the following line will draw 2 paths
             # for the 1st vertex, and make it non-filled, which
             # may be desirable.
             #self.drawVertex(vrtx_path, 0)
 
-            for i, p in enumerate(self.points):
-                line_path.lineTo(p)
-                self.drawVertex(vrtx_path, i)
-            if self.isClosed():
-                line_path.lineTo(self.points[0])
-
-            painter.drawPath(line_path)
-            painter.drawPath(vrtx_path)
-            painter.fillPath(vrtx_path, self.vertex_fill_color)
-            if self.fill:
-                color = self.select_fill_color if self.selected else self.fill_color
-                painter.fillPath(line_path, color)
+        for i, p in enumerate(self.points):
+            line_path.lineTo(p)
+            self.drawVertex(vrtx_path, i)
+        if self.isClosed():
+            line_path.lineTo(self.points[0])
+        painter.drawPath(line_path)
+        painter.drawPath(vrtx_path)
+        painter.fillPath(vrtx_path, self.vertex_fill_color)
+        if self.fill:
+            color = self.select_fill_color if self.selected else self.fill_color
+            painter.fillPath(line_path, color)
+               
 
     def drawVertex(self, path, i):
         d = self.point_size / self.scale
