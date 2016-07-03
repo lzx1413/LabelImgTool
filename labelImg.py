@@ -81,6 +81,7 @@ class MainWindow(QMainWindow, WindowMixin):
         # For loading all image under a directory
         self.mImgList = []
         self.dirname = None
+        self.image_shape = []
         self.labelHist = []
         self.lastOpenDir = None
         date = time.strftime('%Y_%m_%d_%H', time.localtime(time.time()))
@@ -658,7 +659,7 @@ class MainWindow(QMainWindow, WindowMixin):
         try:
             if self.usingPascalVocFormat is True:
                 print 'savePascalVocFormat save to:' + filename
-                lf.savePascalVocFormat(filename, shapes, unicode(self.filename), self.imageData,
+                lf.savePascalVocFormat(filename,self.image_shape, shapes, unicode(self.filename), self.imageData,
                                        self.lineColor.getRgb(), self.fillColor.getRgb(),shape_type_ = self.shape_type)
                 self.process_image_num +=1
             else:
@@ -788,6 +789,9 @@ class MainWindow(QMainWindow, WindowMixin):
                 return False
             self.status("Loaded %s" % os.path.basename(unicode(filename)))
             self.image = image
+            self.image_shape.append(image.width())
+            self.image_shape.append(image.height())
+            self.image_shape.append(image.depth())
             self.filename = filename
             self.canvas.loadPixmap(QPixmap.fromImage(image))
             if self.labelFile:
@@ -993,6 +997,10 @@ class MainWindow(QMainWindow, WindowMixin):
             if self.filename else '.'
         formats = ['*.%s' % unicode(fmt).lower() \
                    for fmt in QImageReader.supportedImageFormats()]
+        if '*.jpg'  not in formats:
+            formats.append('*.jpg')
+        if '*.jpeg' not in formats:
+            formats.append('*.jpeg')
         filters = "Image & Label files (%s)" % \
                   ' '.join(formats + ['*%s' % LabelFile.suffix])
         filename = unicode(QFileDialog.getOpenFileName(self,

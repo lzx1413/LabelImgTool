@@ -1,7 +1,7 @@
 import json
 import os.path
-import numpy
-import cv2
+#import numpy
+#import cv2
 import sys
 from pascal_voc_io import PascalVocWriter
 from base64 import b64encode, b64decode
@@ -51,15 +51,15 @@ class LabelFile(object):
         except Exception, e:
             raise LabelFileError(e)
 
-    def savePascalVocFormat(self, filename, shapes, imagePath, imageData,
+    def savePascalVocFormat(self, filename,image_shape, shapes, imagePath, imageData,
             lineColor=None, fillColor=None, databaseSrc=None,shape_type_ = 'RECT'):
         imgFolderPath = os.path.dirname(imagePath)
         imgFolderName = os.path.split(imgFolderPath)[-1]
         imgFileName = os.path.basename(imagePath)
         imgFileNameWithoutExt = os.path.splitext(imgFileName)[0]
 
-        img = cv2.imread(imagePath)
-        imageShape = img.shape
+        #img = cv2.imread(imagePath)
+        imageShape = image_shape
         writer = PascalVocWriter(imgFolderName, imgFileNameWithoutExt,\
                                  imageShape, localImgPath=imagePath,shape_type=shape_type_)
         bSave = False

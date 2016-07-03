@@ -4,10 +4,10 @@ block_cipher = None
 
 
 a = Analysis(['labelImg.py'],
-             pathex=['D:\\ComputerTechnology\\labelImg','D:\\ComputerTechnology\\labelImg\\libs'],
+             pathex=['D:\\workplace\\labelImg'],
              binaries=None,
              datas=None,
-             hiddenimports=['lib'],
+			 hiddenimports = ['cv2', 'json', 'lxml.etree', 'lxml', 'etree', 'xml.etree.ElementTree'],
              hookspath=[],
              runtime_hooks=[],
              excludes=[],
@@ -25,4 +25,4 @@ exe = EXE(pyz,
           debug=False,
           strip=False,
           upx=True,
-          console=True )
+          console=False )

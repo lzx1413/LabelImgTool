@@ -87,7 +87,6 @@ class Shape(object):
         self._closed = False
 
     def paint(self, painter):
-        print "painting"
         color = self.select_line_color if self.selected else self.line_color
         pen = QPen(color)
         # Try using integer sizes for smoother drawing(?)
