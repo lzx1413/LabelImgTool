@@ -791,7 +791,7 @@ class MainWindow(QMainWindow, WindowMixin):
             self.image = image
             self.image_shape.append(image.width())
             self.image_shape.append(image.height())
-            self.image_shape.append(image.depth())
+            self.image_shape.append(3)
             self.filename = filename
             self.canvas.loadPixmap(QPixmap.fromImage(image))
             if self.labelFile:
