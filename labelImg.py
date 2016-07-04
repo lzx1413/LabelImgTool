@@ -75,6 +75,7 @@ class MainWindow(QMainWindow, WindowMixin):
 
         # Save as Pascal voc xml
         self.defaultSaveDir = None
+        self.defaultLabel = None
         self.usingPascalVocFormat = True
         if self.usingPascalVocFormat:
             LabelFile.suffix = '.xml'
@@ -707,10 +708,13 @@ class MainWindow(QMainWindow, WindowMixin):
         position MUST be in global coordinates.
         """
         text = None
-        if len(self.labelHist) > 0:
-           # self.labelDialog = LabelDialog(parent=self, listItem=self.labelHist)
-            text = self.labelHist[0]
-        #text = self.labelDialog.popUp()
+        if self.defaultLabel is None:
+            if len(self.labelHist) > 0:
+                self.labelDialog = LabelDialog(parent=self, listItem=self.labelHist)
+                self.defaultLabel = self.labelDialog.popUp()
+                text = self.defaultLabel
+        else:
+            text = self.defaultLabel
         if text is not None:
             self.addLabel(self.canvas.setLastLabel(text))
             if self.beginner():  # Switch to edit mode.
