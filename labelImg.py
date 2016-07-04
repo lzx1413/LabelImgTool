@@ -131,6 +131,7 @@ class MainWindow(QMainWindow, WindowMixin):
         self.colorDialog = ColorDialog(parent=self)
 
         self.canvas = Canvas()
+        self.flag_of_edit = False#False: create shape True:edit the shape
         self.canvas.zoomRequest.connect(self.zoomRequest)
 
         scroll = QScrollArea()
@@ -143,6 +144,7 @@ class MainWindow(QMainWindow, WindowMixin):
         self.canvas.scrollRequest.connect(self.scrollRequest)
 
         self.canvas.newShape.connect(self.newShape)
+        self.canvas.changeEditMode.connect(self.changeEditMode)
         self.canvas.shapeMoved.connect(self.setDirty)
         self.canvas.selectionChanged.connect(self.shapeSelectionChanged)
         self.canvas.drawingPolygon.connect(self.toggleDrawingSensitive)
@@ -539,6 +541,7 @@ class MainWindow(QMainWindow, WindowMixin):
 
     def createShape(self):
         assert self.beginner()
+        self.flag_of_edit = False
         self.canvas.setEditing(False)
         self.actions.create.setEnabled(False)
         self.actions.createpolygon.setEnabled(False)
@@ -693,23 +696,28 @@ class MainWindow(QMainWindow, WindowMixin):
             self.setDirty()
         else:  # User probably changed item visibility
             self.canvas.setShapeVisible(shape, item.checkState() == Qt.Checked)
-
     ## Callback functions:
+    def changeEditMode(self):
+        self.flag_of_edit = ~self.flag_of_edit
+        self.canvas.setEditing(self.flag_of_edit)
+
     def newShape(self):
         """Pop-up and give focus to the label editor.
 
         position MUST be in global coordinates.
         """
+        text = None
         if len(self.labelHist) > 0:
-            self.labelDialog = LabelDialog(parent=self, listItem=self.labelHist)
-
-        text = self.labelDialog.popUp()
+           # self.labelDialog = LabelDialog(parent=self, listItem=self.labelHist)
+            text = self.labelHist[0]
+        #text = self.labelDialog.popUp()
         if text is not None:
             self.addLabel(self.canvas.setLastLabel(text))
             if self.beginner():  # Switch to edit mode.
-                self.canvas.setEditing(True)
-                self.actions.create.setEnabled(True)
-                self.actions.createpolygon.setEnabled(True)
+                pass
+                #self.canvas.setEditing(True)
+                #self.actions.create.setEnabled(True)
+                #self.actions.createpolygon.setEnabled(True)
             else:
                 self.actions.editMode.setEnabled(True)
             self.setDirty()
@@ -944,6 +952,25 @@ class MainWindow(QMainWindow, WindowMixin):
 
         if dirpath is not None and len(dirpath) > 1:
             self.lastOpenDir = dirpath
+            #for linux
+            if '/' in dirpath:
+                path_elem = dirpath.split('/')[:-2]
+                last_path_elem = dirpath.split('/')[-1]
+                s = '/'
+                self.defaultSaveDir = s.join(path_elem)+'/Annotation'+'/'+last_path_elem
+                if not os.path.exists(self.defaultSaveDir):
+                    os.makedirs(self.defaultSaveDir)
+            #for windows
+            elif '\\' in dirpath:
+                path_elem = dirpath.split('\\')[:-1]
+                last_path_elem = dirpath.split('\\')[-1]
+                s = '\\'
+                self.defaultSaveDir = s.join(path_elem)+'\\Annotation'+'\\'+last_path_elem
+                if not os.path.exists(self.defaultSaveDir):
+                    os.makedirs(self.defaultSaveDir)
+            self.statusBar().showMessage(
+            '%s . Annotation will be saved to %s' % ('Change saved folder', self.defaultSaveDir))
+            self.statusBar().show()
 
         self.dirname = dirpath
         self.mImgList = self.scanAllImages(dirpath)
@@ -989,6 +1016,10 @@ class MainWindow(QMainWindow, WindowMixin):
 
         if filename:
             self.loadFile(filename)
+        if self.shape_type == 'RECT':
+            self.createRect()
+        elif self.shape_type == 'POLYGON':
+            self.createPolygon()
 
     def openFile(self, _value=False):
         if not self.mayContinue():

@@ -67,7 +67,6 @@ class LabelFile(object):
             points = shape['points']
             label = shape['label']
             if shape['shape_type'] == 0:
-                print 'add rects'
                 bndbox = LabelFile.convertPoints2BndBox(points)
                 writer.addBndBox(bndbox[0], bndbox[1], bndbox[2], bndbox[3], label)
             if shape['shape_type'] == 1:

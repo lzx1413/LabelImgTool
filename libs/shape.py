@@ -59,7 +59,6 @@ class Shape(object):
     def close(self):
         assert len(self.points) > 2
         self._closed = True
-        print len(self.points)
     def isRect(self):
         return self.shape_type == self.RECT_SHAPE
     def isPolygon(self):
