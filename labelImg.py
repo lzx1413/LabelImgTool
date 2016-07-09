@@ -87,6 +87,7 @@ class MainWindow(QMainWindow, WindowMixin):
         self.lastOpenDir = None
         date = time.strftime('%Y_%m_%d_%H', time.localtime(time.time()))
         self.loadFilePath = 'database/pics/' + date + '/'
+        self.loadxml = True
 
         # Whether we need to save or not.
         self.dirty = False
@@ -116,11 +117,14 @@ class MainWindow(QMainWindow, WindowMixin):
         listLayout.addWidget(self.labelList)
         self.editButton = QToolButton()
         self.editButton.setToolButtonStyle(Qt.ToolButtonTextBesideIcon)
+        self.clearButton = QToolButton()
+        self.clearButton.setToolButtonStyle(Qt.ToolButtonTextBesideIcon)
         self.labelListContainer = QWidget()
         self.labelListContainer.setLayout(listLayout)
         self.info_txt = QTextEdit()
 
         listLayout.addWidget(self.editButton)  # , 0, Qt.AlignCenter)
+        listLayout.addWidget(self.clearButton)
         listLayout.addWidget(self.labelList)
         listLayout.addWidget(self.info_txt)
 
@@ -254,10 +258,12 @@ class MainWindow(QMainWindow, WindowMixin):
             self.MANUAL_ZOOM: lambda: 1,
         }
 
+        clear = action('Clear Shapes',self.clear_shapes,'Ctrl+R','delete',tip = u'clear all the shapes about the image',enabled = True)
         edit = action('&Edit Label', self.editLabel,
                       'Ctrl+E', 'edit', u'Modify the label of the selected Box',
                       enabled=False)
         self.editButton.setDefaultAction(edit)
+        self.clearButton.setDefaultAction(clear)
 
         shapeLineColor = action('Shape &Line Color', self.chshapeLineColor,
                                 icon='color_line', tip=u'Change the line color for this specific shape',
@@ -401,6 +407,8 @@ class MainWindow(QMainWindow, WindowMixin):
         +'precessed image num:\t'+str(self.process_image_num)
         self.info_txt.setText(info)
     ## Support Functions ##
+    def clear_shapes(self):
+        self.clearLabel()
     def createPolygon(self):
         self.shape_type = 'POLYGON'
         self.canvas.set_shape_type(1)
@@ -616,6 +624,14 @@ class MainWindow(QMainWindow, WindowMixin):
         self.actions.shapeFillColor.setEnabled(selected)
         print 'shapeSelectionChanged'
 
+    def clearLabel(self):
+        for shape in self.canvas.shapes:
+            self.remLabel(shape)
+            self.setDirty()
+        self.loadxml = False
+        self.loadFile(self.filename)
+        self.loadxml = True
+
     def addLabel(self, shape):
         item = QListWidgetItem(shape.label)
         item.setFlags(item.flags() | Qt.ItemIsUserCheckable)
@@ -817,7 +833,7 @@ class MainWindow(QMainWindow, WindowMixin):
 
             ## Label xml file and show bound box according to its filename
             if self.usingPascalVocFormat is True and \
-                            self.defaultSaveDir is not None:
+                            self.defaultSaveDir is not None and self.loadxml:
                 basename = os.path.basename(os.path.splitext(self.filename)[0])
                 xmlPath = os.path.join(self.defaultSaveDir, basename + '.xml')
                 self.loadPascalXMLByFilename(xmlPath)

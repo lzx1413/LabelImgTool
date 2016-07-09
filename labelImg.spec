@@ -4,7 +4,7 @@ block_cipher = None
 
 
 a = Analysis(['labelImg.py'],
-             pathex=['D:\\workplace\\labelImg'],
+             pathex=['D:\\workplace\\labelImg','D:\\workplace\\labelImg\\libs'],
              binaries=None,
              datas=None,
 			 hiddenimports = ['cv2', 'json', 'lxml.etree', 'lxml', 'etree', 'xml.etree.ElementTree'],
