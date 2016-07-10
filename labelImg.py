@@ -556,7 +556,9 @@ class MainWindow(QMainWindow, WindowMixin):
         self.actions.createpolygon.setEnabled(False)
 
     def toggleDrawingSensitive(self, drawing=True):
+        pass
         """In the middle of drawing, toggling between modes should be disabled."""
+
         self.actions.editMode.setEnabled(not drawing)
         if not drawing and self.beginner():
             # Cancel creation.
@@ -565,7 +567,6 @@ class MainWindow(QMainWindow, WindowMixin):
             self.canvas.restoreCursor()
             self.actions.create.setEnabled(True)
             self.actions.createpolygon.setEnabled(True)
-
     def toggleDrawMode(self, edit=True):
         self.canvas.setEditing(edit)
         self.actions.createMode.setEnabled(edit)
