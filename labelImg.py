@@ -973,6 +973,7 @@ class MainWindow(QMainWindow, WindowMixin):
 
         if dirpath is not None and len(dirpath) > 1:
             self.lastOpenDir = dirpath
+            print dirpath
             #for linux
             if '/' in dirpath:
                 path_elem = dirpath.split('/')[:-2]
@@ -995,6 +996,8 @@ class MainWindow(QMainWindow, WindowMixin):
 
         self.dirname = dirpath
         self.mImgList = self.scanAllImages(dirpath)
+        self.filename =None #clear the filename to read the file in new directory
+        self.defaultLabel = None
         self.openNextImg()
 
     def openPrevImg(self, _value=False):
