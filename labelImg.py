@@ -74,6 +74,7 @@ class MainWindow(QMainWindow, WindowMixin):
 
 
         # Save as Pascal voc xml
+        self.savedpath = None
         self.defaultSaveDir = None
         self.defaultLabel = None
         self.usingPascalVocFormat = True
@@ -113,19 +114,23 @@ class MainWindow(QMainWindow, WindowMixin):
         self.labelList.itemChanged.connect(self.labelItemChanged)
 
         listLayout = QVBoxLayout()
+        editboxlayout = QHBoxLayout()
         listLayout.setContentsMargins(0, 0, 0, 0)
-        listLayout.addWidget(self.labelList)
+#        listLayout.addWidget(self.labelList)
         self.editButton = QToolButton()
         self.editButton.setToolButtonStyle(Qt.ToolButtonTextBesideIcon)
         self.clearButton = QToolButton()
         self.clearButton.setToolButtonStyle(Qt.ToolButtonTextBesideIcon)
+        self.deleteImgButton = QToolButton()
+        self.deleteImgButton.setToolButtonStyle(Qt.ToolButtonTextBesideIcon)
         self.labelListContainer = QWidget()
         self.labelListContainer.setLayout(listLayout)
         self.info_txt = QTextEdit()
 
         listLayout.addWidget(self.editButton)  # , 0, Qt.AlignCenter)
-        listLayout.addWidget(self.clearButton)
         listLayout.addWidget(self.labelList)
+        listLayout.addWidget(self.clearButton)
+        listLayout.addWidget(self.deleteImgButton)
         listLayout.addWidget(self.info_txt)
 
         self.dock = QDockWidget(u'Box Labels', self)
@@ -262,8 +267,10 @@ class MainWindow(QMainWindow, WindowMixin):
         edit = action('&Edit Label', self.editLabel,
                       'Ctrl+E', 'edit', u'Modify the label of the selected Box',
                       enabled=False)
+        deleteImg = action('Delete Image',self.delete_image,'Ctrl+d','delete',tip = u'delete this image',enabled = True)
         self.editButton.setDefaultAction(edit)
         self.clearButton.setDefaultAction(clear)
+        self.deleteImgButton.setDefaultAction(deleteImg)
 
         shapeLineColor = action('Shape &Line Color', self.chshapeLineColor,
                                 icon='color_line', tip=u'Change the line color for this specific shape',
@@ -407,6 +414,19 @@ class MainWindow(QMainWindow, WindowMixin):
         +'precessed image num:\t'+str(self.process_image_num)
         self.info_txt.setText(info)
     ## Support Functions ##
+    def delete_image(self):
+        filename = self.filename
+        os.remove(self.filename)
+        self.openNextImg()
+        self.mImgList.remove(filename)
+        if self.savedpath:
+            if os.path.isfile(self.savedpath):
+                os.remove(self.savedpath)
+        self.statusBar().showMessage(
+                'delete image %s' % (filename))
+        self.statusBar().show()
+
+
     def clear_shapes(self):
         self.clearLabel()
     def createPolygon(self):
@@ -1071,6 +1091,7 @@ class MainWindow(QMainWindow, WindowMixin):
                 imgFileName = os.path.basename(self.filename)
                 savedFileName = os.path.splitext(imgFileName)[0] + LabelFile.suffix
                 savedPath = os.path.join(str(self.defaultSaveDir), savedFileName)
+                self.savedpath = savedPath
                 self._saveFile(savedPath)
             else:
                 self._saveFile(self.filename if self.labelFile \
