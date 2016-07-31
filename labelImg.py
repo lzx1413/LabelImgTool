@@ -1,6 +1,8 @@
 #!/usr/bin/env python
 # -*- coding: utf8 -*-
 import _init_path
+import json
+import save_mask_image
 import os.path
 import re
 import sys
@@ -57,12 +59,12 @@ class MainWindow(QMainWindow, WindowMixin):
     def __init__(self, filename=None):
         super(MainWindow, self).__init__()
         self.setWindowTitle(__appname__)
-        #shape type
+        # shape type
         self.shape_type = 'RECT'
         # info display
         self.display_timer = QTimer()
         self.display_timer.start(1000)
-        QObject.connect(self.display_timer,SIGNAL("timeout()"),self.info_display)
+        QObject.connect(self.display_timer, SIGNAL("timeout()"), self.info_display)
         # online database
         self.database_url = None
         self.connect_remote_db = None
@@ -71,7 +73,6 @@ class MainWindow(QMainWindow, WindowMixin):
         self.dowload_image_num = 0
         self.process_image_num = 0
         self.server_image_list = None
-
 
         # Save as Pascal voc xml
         self.defaultSaveDir = None
@@ -83,6 +84,7 @@ class MainWindow(QMainWindow, WindowMixin):
         self.dirname = None
         self.image_shape = []
         self.labelHist = []
+        self.label_num_dic = {}
         self.lastOpenDir = None
         date = time.strftime('%Y_%m_%d_%H', time.localtime(time.time()))
         self.loadFilePath = 'database/pics/' + date + '/'
@@ -163,10 +165,11 @@ class MainWindow(QMainWindow, WindowMixin):
         opendir = action('&Open Dir', self.openDir,
                          'Ctrl+u', 'open', u'Open Dir')
         remote_settings = action('&Remote DB Settings', self.setRemoteUrl,
-                                'Ctrl+m', u'set remote url')
+                                 'Ctrl+m', u'set remote url')
         loadOnlineImages = action('&Get Images', self.loadOnlineImages, 'Ctrl+l', icon='open', tip=u'load images')
 
-        createpolygon = action('&Create\nPolygon',self.createPolygon,'Ctrl+p',icon = 'new',tip=u'create polygon',enabled = False)
+        createpolygon = action('&Create\nPolygon', self.createPolygon, 'Ctrl+p', icon='new', tip=u'create polygon',
+                               enabled=False)
 
         changeSavedir = action('&Change default saved Annotation dir', self.changeSavedir,
                                'Ctrl+r', 'open', u'Change default saved Annotation dir')
@@ -241,8 +244,8 @@ class MainWindow(QMainWindow, WindowMixin):
                           checkable=True, enabled=False)
         # Group zoom controls into a list for easier toggling.
         zoomActions = (self.zoomWidget, zoomIn, zoomOut, zoomOrg, fitWindow, fitWidth)
-        #Group remote image manage
-        remoteActions = (loadOnlineImages,remote_settings)
+        # Group remote image manage
+        remoteActions = (loadOnlineImages, remote_settings)
         self.zoomMode = self.MANUAL_ZOOM
         self.scalers = {
             self.FIT_WINDOW: self.scaleFitWindow,
@@ -275,8 +278,8 @@ class MainWindow(QMainWindow, WindowMixin):
 
         # Store actions for further handling.
         self.actions = struct(save=save, saveAs=saveAs, open=open, close=close,
-                              lineColor=color1, fillColor=color2, remote_mode=(loadOnlineImages,loadOnlineImages),
-                              create=create, delete=delete, edit=edit, copy=copy,createpolygon = createpolygon,
+                              lineColor=color1, fillColor=color2, remote_mode=(loadOnlineImages, loadOnlineImages),
+                              create=create, delete=delete, edit=edit, copy=copy, createpolygon=createpolygon,
                               createMode=createMode, editMode=editMode, advancedMode=advancedMode,
                               shapeLineColor=shapeLineColor, shapeFillColor=shapeFillColor,
                               zoom=zoom, zoomIn=zoomIn, zoomOut=zoomOut, zoomOrg=zoomOrg,
@@ -285,10 +288,10 @@ class MainWindow(QMainWindow, WindowMixin):
                               fileMenuActions=(open, opendir, save, saveAs, close, quit),
                               beginner=(), advanced=(),
                               editMenu=(edit, copy, delete, None, color1, color2),
-                              beginnerContext=(create,createpolygon, edit, copy, delete),
-                              advancedContext=(createMode,createpolygon, editMode, edit, copy,
+                              beginnerContext=(create, createpolygon, edit, copy, delete),
+                              advancedContext=(createMode, createpolygon, editMode, edit, copy,
                                                delete, shapeLineColor, shapeFillColor),
-                              onLoadActive=(close, create, createMode, createpolygon,editMode),
+                              onLoadActive=(close, create, createMode, createpolygon, editMode),
                               onShapesPresent=(saveAs, hideAll, showAll))
 
         self.menus = struct(
@@ -321,7 +324,7 @@ class MainWindow(QMainWindow, WindowMixin):
         self.tools = self.toolbar('Tools')
         self.actions.beginner = (
             loadOnlineImages,
-            open, opendir, openNextImg, openPrevImg, save, None, create,createpolygon, copy, delete, None,
+            open, opendir, openNextImg, openPrevImg, save, None, create, createpolygon, copy, delete, None,
             zoomIn, zoom, zoomOut, fitWindow, fitWidth)
 
         self.actions.advanced = (
@@ -390,22 +393,25 @@ class MainWindow(QMainWindow, WindowMixin):
         self.zoomWidget.valueChanged.connect(self.paintCanvas)
 
         self.populateModeActions()
+
     ##infomation display
     def info_display(self):
         self.dowload_image_num = len(self.mImgList)
-        info = 'server image num:\t'+str(self.server_image_num)+'\n'\
-        +'dowload image num:\t'+str(self.dowload_image_num)+'\n'\
-        +'precessed image num:\t'+str(self.process_image_num)
+        info = 'server image num:\t' + str(self.server_image_num) + '\n' \
+               + 'dowload image num:\t' + str(self.dowload_image_num) + '\n' \
+               + 'precessed image num:\t' + str(self.process_image_num)
         self.info_txt.setText(info)
+
     ## Support Functions ##
     def createPolygon(self):
         self.shape_type = 'POLYGON'
         self.canvas.set_shape_type(1)
         self.createShape()
+
     def loadOnlineImages(self):
         if self.image_list:
-            t = ImageManagement.loadImageThread(self.database_url, self.image_list,self.mImgList, self.loadFilePath)
-            ImageManagement.loadOnlineImgMul(self.database_url,self.image_list,2,self.mImgList,self.loadFilePath)
+            t = ImageManagement.loadImageThread(self.database_url, self.image_list, self.mImgList, self.loadFilePath)
+            ImageManagement.loadOnlineImgMul(self.database_url, self.image_list, 2, self.mImgList, self.loadFilePath)
             while 1:
                 if self.mImgList:
                     self.dirname = self.loadFilePath
@@ -415,7 +421,7 @@ class MainWindow(QMainWindow, WindowMixin):
     def setRemoteUrl(self):
         setRemoteUrldialog = MyDialog.SetRemoteDialog(parent=self)
         if setRemoteUrldialog.exec_():
-            self.database_url = 'http://'+setRemoteUrldialog.get_remote_url()
+            self.database_url = 'http://' + setRemoteUrldialog.get_remote_url()
             self.remoteMode = setRemoteUrldialog.is_in_remote_mode()
             self.dowload_thread_num = setRemoteUrldialog.get_thread_num()
             self.server_image_list = setRemoteUrldialog.get_server_image_list()
@@ -426,7 +432,7 @@ class MainWindow(QMainWindow, WindowMixin):
         if self.database_url:
             try:
                 image_file = requests.get(self.database_url + self.server_image_list)
-            except requests.URLRequired,e:
+            except requests.URLRequired, e:
                 logging.error('can not get the server image list')
                 return
 
@@ -455,6 +461,7 @@ class MainWindow(QMainWindow, WindowMixin):
     def toggleRemoteMode(self):
         for item in self.actions.remote_mode:
             item.setEnabled(True)
+
     def populateModeActions(self):
         if self.beginner():
             tool, menu = self.actions.beginner, self.actions.beginnerContext
@@ -531,11 +538,11 @@ class MainWindow(QMainWindow, WindowMixin):
     ## Callbacks ##
     def tutorial(self):
         subprocess.Popen([self.screencastViewer, self.screencast])
+
     def createRect(self):
         self.shape_type = 'RECT'
         self.canvas.set_shape_type(0)
         self.createShape()
-
 
     def createShape(self):
         assert self.beginner()
@@ -652,27 +659,38 @@ class MainWindow(QMainWindow, WindowMixin):
                             if s.line_color != self.lineColor else None,
                         fill_color=s.fill_color.getRgb() \
                             if s.fill_color != self.fillColor else None,
-                        points=[(p.x(), p.y()) for p in s.points],shape_type = s.shape_type)
+                        points=[(p.x(), p.y()) for p in s.points], shape_type=s.shape_type)
 
         shapes = [format_shape(shape) for shape in self.canvas.shapes]
-        # Can add differrent annotation formats here
-        try:
-            if self.usingPascalVocFormat is True:
-                print 'savePascalVocFormat save to:' + filename
-                lf.savePascalVocFormat(filename,self.image_shape, shapes, unicode(self.filename), self.imageData,
-                                       self.lineColor.getRgb(), self.fillColor.getRgb(),shape_type_ = self.shape_type)
-                self.process_image_num +=1
-            else:
-                lf.save(filename, shapes, unicode(self.filename), self.imageData,
-                        self.lineColor.getRgb(), self.fillColor.getRgb())
-                self.labelFile = lf
-                self.filename = filename
-                self.process_image_num +=1
+        print 'shape type',self.shape_type
+        if self.shape_type == 'POLYGON':
+            with open(self.defaultSaveDir+'label_num_dic.json','w') as label_num_file:
+                json.dump(self.label_num_dic,label_num_file)
+            imgFileName = os.path.basename(self.filename)
+            result_path = self.defaultSaveDir+imgFileName.replace('.','_mask.')#the mask image will be save as file_mask.jpg etc.
+            mask_writer = save_mask_image.label_mask_writer(self.label_num_dic,result_path, self.image_shape[1],
+                                                            self.image_shape[0])
+            mask_writer.save_mask_image(shapes)
             return True
-        except LabelFileError, e:
-            self.errorMessage(u'Error saving label data',
+        # Can add differrent annotation formats here
+        else:
+            try:
+                if self.usingPascalVocFormat is True:
+                    print 'savePascalVocFormat save to:' + filename
+                    lf.savePascalVocFormat(filename, self.image_shape, shapes, unicode(self.filename), self.imageData,
+                                       self.lineColor.getRgb(), self.fillColor.getRgb(), shape_type_=self.shape_type)
+                    self.process_image_num += 1
+                else:
+                    lf.save(filename, shapes, unicode(self.filename), self.imageData,
+                        self.lineColor.getRgb(), self.fillColor.getRgb())
+                    self.labelFile = lf
+                    self.filename = filename
+                    self.process_image_num += 1
+                return True
+            except LabelFileError, e:
+                self.errorMessage(u'Error saving label data',
                               u'<b>%s</b>' % e)
-            return False
+                return False
 
     def copySelectedShape(self):
         self.addLabel(self.canvas.copySelectedShape())
@@ -716,6 +734,7 @@ class MainWindow(QMainWindow, WindowMixin):
 
             if text not in self.labelHist:
                 self.labelHist.append(text)
+                self.label_num_dic[text] = max(self.label_num_dic.values()) + 1
         else:
             # self.canvas.undoLastLine()
             self.canvas.resetAllLines()
@@ -754,10 +773,11 @@ class MainWindow(QMainWindow, WindowMixin):
     def togglePolygons(self, value):
         for item, shape in self.itemsToShapes.iteritems():
             item.setCheckState(Qt.Checked if value else Qt.Unchecked)
+
     def loadFile(self, filename=None):
         """Load the specified file, or the last opened file if None."""
         self.resetState()
-#        filename = filename.replace('\\','/')
+        #        filename = filename.replace('\\','/')
         self.canvas.setEnabled(False)
         if filename is None:
             filename = self.settings['filename']
@@ -928,6 +948,19 @@ class MainWindow(QMainWindow, WindowMixin):
             self.loadPascalXMLByFilename(filename)
 
     def openDir(self, _value=False):
+        '''
+        the default save files is orgnized as fellow:
+        image_file:
+                  image_file1:
+                  image_file2:
+                  ...
+        Annotation:
+                   image_file1:
+                   image_file2:
+                   ...
+        :param _value:
+        :return:
+        '''
         if not self.mayContinue():
             return
 
@@ -946,6 +979,24 @@ class MainWindow(QMainWindow, WindowMixin):
             self.lastOpenDir = dirpath
 
         self.dirname = dirpath
+        if '/' in dirpath:
+            path_elem = dirpath.split('/')[:-2]
+            last_path_elem = dirpath.split('/')[-1]
+            s = '/'
+            self.defaultSaveDir = s.join(path_elem) + '/Annotation' + '/' + last_path_elem+'/'
+            if not os.path.exists(self.defaultSaveDir):
+                os.makedirs(self.defaultSaveDir)
+                # for windows
+        elif '\\' in dirpath:
+            path_elem = dirpath.split('\\')[:-1]
+            last_path_elem = dirpath.split('\\')[-1]
+            s = '\\'
+            self.defaultSaveDir = s.join(path_elem) + '\\Annotation' + '\\' + last_path_elem+'\\'
+            if not os.path.exists(self.defaultSaveDir):
+                os.makedirs(self.defaultSaveDir)
+        self.statusBar().showMessage(
+            '%s . Annotation will be saved to %s' % ('Change saved folder', self.defaultSaveDir))
+        self.statusBar().show()
         self.mImgList = self.scanAllImages(dirpath)
         self.openNextImg()
 
@@ -997,7 +1048,7 @@ class MainWindow(QMainWindow, WindowMixin):
             if self.filename else '.'
         formats = ['*.%s' % unicode(fmt).lower() \
                    for fmt in QImageReader.supportedImageFormats()]
-        if '*.jpg'  not in formats:
+        if '*.jpg' not in formats:
             formats.append('*.jpg')
         if '*.jpeg' not in formats:
             formats.append('*.jpeg')
@@ -1144,6 +1195,11 @@ class MainWindow(QMainWindow, WindowMixin):
                         self.lablHist = [line]
                     else:
                         self.labelHist.append(line)
+        if self.labelHist:
+            num = 1
+            for label in self.labelHist:
+                self.label_num_dic[label] = num
+                num += 1
 
     def loadPascalXMLByFilename(self, filename):
         if self.filename is None:
