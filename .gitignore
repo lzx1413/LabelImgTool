@@ -11,3 +11,4 @@ dist/
 
 tags
 test.py
+.idea/workspace.xml

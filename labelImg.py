@@ -663,34 +663,33 @@ class MainWindow(QMainWindow, WindowMixin):
 
         shapes = [format_shape(shape) for shape in self.canvas.shapes]
         print 'shape type',self.shape_type
+        imgFileName = os.path.basename(self.filename)
         if self.shape_type == 'POLYGON':
             with open(self.defaultSaveDir+'label_num_dic.json','w') as label_num_file:
                 json.dump(self.label_num_dic,label_num_file)
-            imgFileName = os.path.basename(self.filename)
             result_path = self.defaultSaveDir+imgFileName.replace('.','_mask.')#the mask image will be save as file_mask.jpg etc.
             mask_writer = save_mask_image.label_mask_writer(self.label_num_dic,result_path, self.image_shape[1],
                                                             self.image_shape[0])
             mask_writer.save_mask_image(shapes)
-            return True
         # Can add differrent annotation formats here
-        else:
-            try:
-                if self.usingPascalVocFormat is True:
-                    print 'savePascalVocFormat save to:' + filename
-                    lf.savePascalVocFormat(filename, self.image_shape, shapes, unicode(self.filename), self.imageData,
+        try:
+            if self.usingPascalVocFormat is True:
+                print 'savePascalVocFormat save to:' + filename
+                filename = self.defaultSaveDir+imgFileName.split('.')[0]+'.xml'#the mask image will be save as file_mask.jpg etc.
+                lf.savePascalVocFormat(filename, self.image_shape, shapes, unicode(self.filename), self.imageData,
                                        self.lineColor.getRgb(), self.fillColor.getRgb(), shape_type_=self.shape_type)
-                    self.process_image_num += 1
-                else:
-                    lf.save(filename, shapes, unicode(self.filename), self.imageData,
+                self.process_image_num += 1
+            else:
+                lf.save(filename, shapes, unicode(self.filename), self.imageData,
                         self.lineColor.getRgb(), self.fillColor.getRgb())
-                    self.labelFile = lf
-                    self.filename = filename
-                    self.process_image_num += 1
-                return True
-            except LabelFileError, e:
-                self.errorMessage(u'Error saving label data',
+                self.labelFile = lf
+                self.filename = filename
+                self.process_image_num += 1
+            return True
+        except LabelFileError, e:
+            self.errorMessage(u'Error saving label data',
                               u'<b>%s</b>' % e)
-                return False
+            return False
 
     def copySelectedShape(self):
         self.addLabel(self.canvas.copySelectedShape())
@@ -733,8 +732,11 @@ class MainWindow(QMainWindow, WindowMixin):
             self.setDirty()
 
             if text not in self.labelHist:
+                if not self.labelHist:
+                    self.label_num_dic[text] = 1
+                else:
+                    self.label_num_dic[text] = max(self.label_num_dic.values()) + 1
                 self.labelHist.append(text)
-                self.label_num_dic[text] = max(self.label_num_dic.values()) + 1
         else:
             # self.canvas.undoLastLine()
             self.canvas.resetAllLines()
