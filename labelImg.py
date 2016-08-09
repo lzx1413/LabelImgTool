@@ -810,6 +810,7 @@ class MainWindow(QMainWindow, WindowMixin):
                 self.status("Error reading %s" % filename)
                 return False
             self.status("Loaded %s" % os.path.basename(unicode(filename)))
+            self.setWindowTitle(__appname__+' '+os.path.basename(unicode(filename)))
             self.image = image
             self.image_shape.append(image.width())
             self.image_shape.append(image.height())
