@@ -637,8 +637,8 @@ class MainWindow(QMainWindow, WindowMixin):
 
     def loadLabels(self, shapes):
         s = []
-        for label, points, line_color, fill_color in shapes:
-            shape = Shape(label=label)
+        for label, points, line_color, fill_color,shape_type in shapes:
+            shape = Shape(label=label,shape_type=shape_type)
             for x, y in points:
                 shape.addPoint(QPointF(x, y))
             shape.close()
@@ -832,6 +832,10 @@ class MainWindow(QMainWindow, WindowMixin):
                 basename = os.path.basename(os.path.splitext(self.filename)[0])
                 xmlPath = os.path.join(self.defaultSaveDir, basename + '.xml')
                 self.loadPascalXMLByFilename(xmlPath)
+                if self.shape_type == 'POLYGON':
+                    self.canvas.set_shape_type(1)
+                elif self.shape_type == 'RECT':
+                    self.canvas.set_shape_type(0)
 
             return True
         return False
@@ -1213,6 +1217,7 @@ class MainWindow(QMainWindow, WindowMixin):
         tVocParseReader = PascalVocReader(filename)
         shapes = tVocParseReader.getShapes()
         self.loadLabels(shapes)
+        self.shape_type =tVocParseReader.getShapeType()
 
 
 class Settings(object):

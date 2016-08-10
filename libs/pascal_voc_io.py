@@ -130,14 +130,17 @@ class PascalVocReader:
         ## [labbel, [(x1,y1), (x2,y2), (x3,y3), (x4,y4)], color, color]
         self.shapes = []
         self.filepath = filepath
+        self.shape_type = None
         self.parseXML()
 
     def getShapes(self):
         return self.shapes
+    def getShapeType(self):
+        return self.shape_type
 
     def addPolygonShape(self,label,points):
         points = [(point[0],point[1]) for point in points]
-        self.shapes.append((label,points,None,None))
+        self.shapes.append((label,points,None,None,1))
 
     def addShape(self, label, rect):
         xmin = rect[0]
@@ -145,14 +148,15 @@ class PascalVocReader:
         xmax = rect[2]
         ymax = rect[3]
         points = [(xmin, ymin), (xmin, ymax), (xmax, ymax), (xmax, ymin)]
-        self.shapes.append((label, points, None, None))
+        self.shapes.append((label, points, None, None,0))
 
     def parseXML(self):
         assert self.filepath.endswith('.xml'), "Unsupport file format"
         xmltree = ElementTree.parse(self.filepath).getroot()
         filename = xmltree.find('filename').text
-        shape_type = xmltree.find('shape_type').text
-        if shape_type == 'RECT':
+        self.shape_type = xmltree.find('shape_type').text
+
+        if self.shape_type == 'RECT':
             for object_iter in xmltree.findall('object'):
                 rects = []
                 bndbox = object_iter.find("bndbox")
@@ -161,7 +165,7 @@ class PascalVocReader:
                 for rect in rects:
                     self.addShape(label, rect)
             return True
-        elif shape_type == 'POLYGON':
+        elif self.shape_type == 'POLYGON':
             for object_iter in xmltree.findall('object'):
                 points = []
                 polygons = object_iter.find("polygon")
@@ -171,6 +175,8 @@ class PascalVocReader:
                     point = [int(dot) for dot in point]
                     points.append(point)
                 self.addPolygonShape(label,points)
+        else:
+            print 'unsupportable shape type'
 
 
 # tempParseReader = PascalVocReader('test.xml')
