@@ -84,6 +84,8 @@ class MainWindow(QMainWindow, WindowMixin):
         self.dirname = None
         self.image_shape = []
         self.labelHist = []
+        self.label_fre_dic = {}
+        self.label_sub_dic = {}
         self.label_num_dic = {}
         self.lastOpenDir = None
         date = time.strftime('%Y_%m_%d_%H', time.localtime(time.time()))
@@ -637,8 +639,8 @@ class MainWindow(QMainWindow, WindowMixin):
 
     def loadLabels(self, shapes):
         s = []
-        for label, points, line_color, fill_color,shape_type in shapes:
-            shape = Shape(label=label,shape_type=shape_type)
+        for label, points, line_color, fill_color, shape_type in shapes:
+            shape = Shape(label=label, shape_type=shape_type)
             for x, y in points:
                 shape.addPoint(QPointF(x, y))
             shape.close()
@@ -662,20 +664,22 @@ class MainWindow(QMainWindow, WindowMixin):
                         points=[(p.x(), p.y()) for p in s.points], shape_type=s.shape_type)
 
         shapes = [format_shape(shape) for shape in self.canvas.shapes]
-        print 'shape type',self.shape_type
+        print 'shape type', self.shape_type
         imgFileName = os.path.basename(self.filename)
         if self.shape_type == 'POLYGON':
-            with open(self.defaultSaveDir+'label_num_dic.json','w') as label_num_file:
-                json.dump(self.label_num_dic,label_num_file)
-            result_path = self.defaultSaveDir+imgFileName.replace('.','_mask.')#the mask image will be save as file_mask.jpg etc.
-            mask_writer = save_mask_image.label_mask_writer(self.label_num_dic,result_path, self.image_shape[1],
+            with open(self.defaultSaveDir + 'label_num_dic.json', 'w') as label_num_file:
+                json.dump(self.label_num_dic, label_num_file)
+            result_path = self.defaultSaveDir + imgFileName.replace('.',
+                                                                    '_mask.')  # the mask image will be save as file_mask.jpg etc.
+            mask_writer = save_mask_image.label_mask_writer(self.label_num_dic, result_path, self.image_shape[1],
                                                             self.image_shape[0])
             mask_writer.save_mask_image(shapes)
         # Can add differrent annotation formats here
         try:
             if self.usingPascalVocFormat is True:
                 print 'savePascalVocFormat save to:' + filename
-                filename = self.defaultSaveDir+imgFileName.split('.')[0]+'.xml'#the mask image will be save as file_mask.jpg etc.
+                filename = self.defaultSaveDir + imgFileName.split('.')[
+                    0] + '.xml'  # the mask image will be save as file_mask.jpg etc.
                 lf.savePascalVocFormat(filename, self.image_shape, shapes, unicode(self.filename), self.imageData,
                                        self.lineColor.getRgb(), self.fillColor.getRgb(), shape_type_=self.shape_type)
                 self.process_image_num += 1
@@ -717,11 +721,17 @@ class MainWindow(QMainWindow, WindowMixin):
 
         position MUST be in global coordinates.
         """
-        if len(self.labelHist) > 0:
-            self.labelDialog = LabelDialog(parent=self, listItem=self.labelHist)
+        if self.label_sub_dic:
+            self.labelDialog = LabelDialog(parent=self, sub_label_items=self.label_sub_dic,label_fre_dic = self.label_fre_dic)
+        elif len(self.labelHist) > 0:
+            self.labelDialog = LabelDialog(parent=self, listItem=self.labelHist,label_fre_dic = self.label_fre_dic)
 
         text = self.labelDialog.popUp()
         if text is not None:
+            if str(text) in self.label_fre_dic:
+                self.label_fre_dic[str(text)] += 1
+            else:
+                self.label_fre_dic[str(text)] = 1
             self.addLabel(self.canvas.setLastLabel(text))
             if self.beginner():  # Switch to edit mode.
                 self.canvas.setEditing(True)
@@ -810,7 +820,7 @@ class MainWindow(QMainWindow, WindowMixin):
                 self.status("Error reading %s" % filename)
                 return False
             self.status("Loaded %s" % os.path.basename(unicode(filename)))
-            self.setWindowTitle(__appname__+' '+os.path.basename(unicode(filename)))
+            self.setWindowTitle(__appname__ + ' ' + os.path.basename(unicode(filename)))
             self.image = image
             self.image_shape.append(image.width())
             self.image_shape.append(image.height())
@@ -990,7 +1000,7 @@ class MainWindow(QMainWindow, WindowMixin):
             path_elem = dirpath.split('/')[:-2]
             last_path_elem = dirpath.split('/')[-1]
             s = '/'
-            self.defaultSaveDir = s.join(path_elem) + '/Annotation' + '/' + last_path_elem+'/'
+            self.defaultSaveDir = s.join(path_elem) + '/Annotation' + '/' + last_path_elem + '/'
             if not os.path.exists(self.defaultSaveDir):
                 os.makedirs(self.defaultSaveDir)
                 # for windows
@@ -998,7 +1008,7 @@ class MainWindow(QMainWindow, WindowMixin):
             path_elem = dirpath.split('\\')[:-1]
             last_path_elem = dirpath.split('\\')[-1]
             s = '\\'
-            self.defaultSaveDir = s.join(path_elem) + '\\Annotation' + '\\' + last_path_elem+'\\'
+            self.defaultSaveDir = s.join(path_elem) + '\\Annotation' + '\\' + last_path_elem + '\\'
             if not os.path.exists(self.defaultSaveDir):
                 os.makedirs(self.defaultSaveDir)
         self.statusBar().showMessage(
@@ -1194,14 +1204,27 @@ class MainWindow(QMainWindow, WindowMixin):
 
     def loadPredefinedClasses(self):
         predefined_classes_path = os.path.join('data', 'predefined_classes.txt')
+        predefined_subclasses_path = os.path.join('data', 'predefined_sub_classes.txt')
+        if os.path.exists(predefined_subclasses_path) is True:
+            with open(predefined_subclasses_path, 'rt') as f:
+                lines = f.readlines()
+                print lines
+                for line in lines:
+                    line = line.strip()
+                    line = line.split(':')
+                    print line
+                    self.label_sub_dic[line[0]] = line[1].strip().split(' ')
+        print self.label_sub_dic
         if os.path.exists(predefined_classes_path) is True:
             with open(predefined_classes_path) as f:
                 for line in f:
                     line = line.strip()
                     if self.labelHist is None:
                         self.lablHist = [line]
+                        self.label_fre_dic[line] = 0
                     else:
                         self.labelHist.append(line)
+                        self.label_fre_dic[line] = 0
         if self.labelHist:
             num = 1
             for label in self.labelHist:
@@ -1217,7 +1240,7 @@ class MainWindow(QMainWindow, WindowMixin):
         tVocParseReader = PascalVocReader(filename)
         shapes = tVocParseReader.getShapes()
         self.loadLabels(shapes)
-        self.shape_type =tVocParseReader.getShapeType()
+        self.shape_type = tVocParseReader.getShapeType()
 
 
 class Settings(object):

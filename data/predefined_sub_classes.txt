@@ -1,0 +1,9 @@
+body: hair face neck arm leg hand skin foot
+upper cloth: Apparel blazer blouse cardigan coat jacket hoodie jumper shirt sweater sweatshirt top t-shirt vest suit intimate
+trouser: jeans pants leggings panties romper shorts tights
+shoe: boots clogs flats heels loafers pumps sandals shoes sneakers wedges
+accessory: accessory bracelet decor earrings necklace Pearl ring sunglasses glasses watch
+overcoat: bodysuit swimwear
+cloth: bag belt bra cape gloves hat purse satchel scarf socks tie stockings denim
+dress: dress skirt
+others: case cream others wallet souvenir sister black 
