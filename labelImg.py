@@ -1018,6 +1018,9 @@ class MainWindow(QMainWindow, WindowMixin):
         self.openNextImg()
 
     def openPrevImg(self, _value=False):
+        if self.autoSaving is True and self.defaultSaveDir is not None:
+            if self.dirty is True and self.hasLabels():
+                self.saveFile()
         if not self.mayContinue():
             return
 
