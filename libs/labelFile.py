@@ -51,17 +51,15 @@ class LabelFile(object):
         except Exception, e:
             raise LabelFileError(e)
 
-    def savePascalVocFormat(self, filename,image_shape, shapes, imagePath, imageData,
-            lineColor=None, fillColor=None, databaseSrc=None,shape_type_ = 'RECT'):
+    def savePascalVocFormat(self, savefilename,image_size, shapes, imagePath = None, databaseSrc=None,shape_type_ = 'RECT'):
         imgFolderPath = os.path.dirname(imagePath)
         imgFolderName = os.path.split(imgFolderPath)[-1]
         imgFileName = os.path.basename(imagePath)
         imgFileNameWithoutExt = os.path.splitext(imgFileName)[0]
 
         #img = cv2.imread(imagePath)
-        imageShape = image_shape
         writer = PascalVocWriter(imgFolderName, imgFileNameWithoutExt,\
-                                 imageShape, localImgPath=imagePath,shape_type=shape_type_)
+                                 image_size, localImgPath=imagePath,shape_type=shape_type_)
         bSave = False
         for shape in shapes:
             points = shape['points']
@@ -77,7 +75,7 @@ class LabelFile(object):
             bSave = True
 
         if bSave:
-            writer.save(targetFile = filename)
+            writer.save(targetFile = savefilename)
         return
 
     @staticmethod

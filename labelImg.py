@@ -82,7 +82,7 @@ class MainWindow(QMainWindow, WindowMixin):
         # For loading all image under a directory
         self.mImgList = []
         self.dirname = None
-        self.image_shape = []
+        self.image_size = []
         self.labelHist = []
         self.label_fre_dic = {}
         self.label_sub_dic = {}
@@ -671,17 +671,16 @@ class MainWindow(QMainWindow, WindowMixin):
                 json.dump(self.label_num_dic, label_num_file)
             result_path = self.defaultSaveDir + imgFileName.replace('.',
                                                                     '_mask.')  # the mask image will be save as file_mask.jpg etc.
-            mask_writer = save_mask_image.label_mask_writer(self.label_num_dic, result_path, self.image_shape[1],
-                                                            self.image_shape[0])
+            mask_writer = save_mask_image.label_mask_writer(self.label_num_dic, result_path, self.image_size[1],
+                                                            self.image_size[0])
             mask_writer.save_mask_image(shapes)
         # Can add differrent annotation formats here
         try:
             if self.usingPascalVocFormat is True:
-                print 'savePascalVocFormat save to:' + filename
-                filename = self.defaultSaveDir + imgFileName.split('.')[
+                savefilename = self.defaultSaveDir + imgFileName.split('.')[
                     0] + '.xml'  # the mask image will be save as file_mask.jpg etc.
-                lf.savePascalVocFormat(filename, self.image_shape, shapes, unicode(self.filename), self.imageData,
-                                       self.lineColor.getRgb(), self.fillColor.getRgb(), shape_type_=self.shape_type)
+                print 'savePascalVocFormat save to:' + savefilename
+                lf.savePascalVocFormat(savefilename, self.image_size, shapes, unicode(self.filename),shape_type_=self.shape_type)
                 self.process_image_num += 1
             else:
                 lf.save(filename, shapes, unicode(self.filename), self.imageData,
@@ -822,9 +821,9 @@ class MainWindow(QMainWindow, WindowMixin):
             self.status("Loaded %s" % os.path.basename(unicode(filename)))
             self.setWindowTitle(__appname__ + ' ' + os.path.basename(unicode(filename)))
             self.image = image
-            self.image_shape.append(image.width())
-            self.image_shape.append(image.height())
-            self.image_shape.append(3)
+            self.image_size.append(image.width())
+            self.image_size.append(image.height())
+            self.image_size.append(3)
             self.filename = filename
             self.canvas.loadPixmap(QPixmap.fromImage(image))
             if self.labelFile:

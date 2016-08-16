@@ -28,9 +28,13 @@ class PascalVocWriter:
             Return XML root
         """
         # Check conditions
+        '''
         if self.filename is None or \
                         self.foldername is None or \
                         self.imgSize is None or \
+                        len(self.boxlist) <= 0:
+        '''
+        if self.filename is None or \
                         len(self.boxlist) <= 0:
             return None
 
@@ -49,16 +53,17 @@ class PascalVocWriter:
         database = SubElement(source, 'database')
         database.text = self.databaseSrc
 
-        size_part = SubElement(top, 'size')
-        width = SubElement(size_part, 'width')
-        height = SubElement(size_part, 'height')
-        depth = SubElement(size_part, 'depth')
-        width.text = str(self.imgSize[1])
-        height.text = str(self.imgSize[0])
-        if len(self.imgSize) == 3:
-            depth.text = str(self.imgSize[2])
-        else:
-            depth.text = '1'
+        if self.imgSize:
+            size_part = SubElement(top, 'size')
+            width = SubElement(size_part, 'width')
+            height = SubElement(size_part, 'height')
+            depth = SubElement(size_part, 'depth')
+            width.text = str(self.imgSize[1])
+            height.text = str(self.imgSize[0])
+            if len(self.imgSize) == 3:
+                depth.text = str(self.imgSize[2])
+            else:
+                depth.text = '1'
 
         segmented = SubElement(top, 'segmented')
         segmented.text = '0'
@@ -85,8 +90,9 @@ class PascalVocWriter:
     def appendObjects(self, top):
         for each_object in self.boxlist:
             object_item = SubElement(top, 'object')
-            name = SubElement(object_item, 'name')
-            name.text = str(each_object['name'])
+            if each_object['name']:
+                name = SubElement(object_item, 'name')
+                name.text = str(each_object['name'])
             pose = SubElement(object_item, 'pose')
             pose.text = "Unspecified"
             truncated = SubElement(object_item, 'truncated')
