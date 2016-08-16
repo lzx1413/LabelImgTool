@@ -668,6 +668,8 @@ class MainWindow(QMainWindow, WindowMixin):
         imgFileName = os.path.basename(self.filename)
         if self.shape_type == 'POLYGON':
             with open(self.defaultSaveDir + 'label_num_dic.json', 'w') as label_num_file:
+                for key in self.label_num_dic:
+                    print type(key)
                 json.dump(self.label_num_dic, label_num_file)
             result_path = self.defaultSaveDir + imgFileName.replace('.',
                                                                     '_mask.')  # the mask image will be save as file_mask.jpg etc.
@@ -727,6 +729,7 @@ class MainWindow(QMainWindow, WindowMixin):
             self.labelDialog = LabelDialog(parent=self, listItem=self.labelHist,label_fre_dic = self.label_fre_dic)
 
         text = self.labelDialog.popUp()
+        text = str(text)
         if text is not None:
             if str(text) in self.label_fre_dic:
                 self.label_fre_dic[str(text)] += 1
@@ -743,7 +746,7 @@ class MainWindow(QMainWindow, WindowMixin):
 
             if text not in self.labelHist:
                 if not self.labelHist:
-                    self.label_num_dic[text] = 1
+                    self.label_num_dic[str(text)] = 1
                 else:
                     self.label_num_dic[text] = max(self.label_num_dic.values()) + 1
                 self.labelHist.append(text)
@@ -1039,11 +1042,11 @@ class MainWindow(QMainWindow, WindowMixin):
     def openNextImg(self, _value=False):
         # Proceding next image without dialog if having any label
         if self.autoSaving is True and self.defaultSaveDir is not None:
-            if self.dirty is True and self.hasLabels():
+            if self.dirty is True :
                 self.saveFile()
 
-        if not self.mayContinue():
-            return
+       # if not self.mayContinue():
+        #    return
 
         if len(self.mImgList) <= 0:
             return
@@ -1091,6 +1094,12 @@ class MainWindow(QMainWindow, WindowMixin):
             else:
                 self._saveFile(self.filename if self.labelFile \
                                    else self.saveFileDialog())
+        else:
+            imgFileName = os.path.basename(self.filename)
+            savedFileName = os.path.splitext(imgFileName)[0] + LabelFile.suffix
+            savedPath = os.path.join(str(self.defaultSaveDir), savedFileName)
+            if os.path.isfile(savedPath):
+                os.remove(savedPath)
 
     def saveFileAs(self, _value=False):
         assert not self.image.isNull(), "cannot save empty image"
@@ -1131,8 +1140,8 @@ class MainWindow(QMainWindow, WindowMixin):
     # Message Dialogs. #
     def hasLabels(self):
         if not self.itemsToShapes:
-            self.errorMessage(u'No objects labeled',
-                              u'You must label at least one object to save the file.')
+            #self.errorMessage(u'No objects labeled',
+             #                 u'You must label at least one object to save the file.')
             return False
         return True
 
