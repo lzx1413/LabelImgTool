@@ -197,9 +197,9 @@ class Canvas(QWidget):
                     targetPos = self.line[1]
                     maxX = targetPos.x()
                     maxY = targetPos.y()
-                    self.current.addPoint(QPointF(maxX, minY))
-                    self.current.addPoint(targetPos)
                     self.current.addPoint(QPointF(minX, maxY))
+                    self.current.addPoint(targetPos)
+                    self.current.addPoint(QPointF(maxX, minY))
                     self.current.addPoint(initPos)
                     self.line[0] = self.current[-1]
                     if self.current.isClosed():
