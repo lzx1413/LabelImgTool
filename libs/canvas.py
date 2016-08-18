@@ -316,11 +316,11 @@ class Canvas(QWidget):
             lshift = None
             rshift = None
             if index % 2 == 0:
-                rshift = QPointF(shiftPos.x(), 0)
-                lshift = QPointF(0, shiftPos.y())
-            else:
                 lshift = QPointF(shiftPos.x(), 0)
                 rshift = QPointF(0, shiftPos.y())
+            else:
+                rshift = QPointF(shiftPos.x(),0)
+                lshift = QPointF(0,shiftPos.y())
             shape.moveVertexBy(rindex, rshift)
             shape.moveVertexBy(lindex, lshift)
 
@@ -562,6 +562,8 @@ class Canvas(QWidget):
 
     def loadShapes(self, shapes):
         self.shapes = list(shapes)
+        self.shape_type = shapes[0].get_shape_type()
+        print self.shape_type
         self.current = None
         self.repaint()
 

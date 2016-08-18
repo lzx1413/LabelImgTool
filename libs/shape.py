@@ -55,6 +55,8 @@ class Shape(object):
             self.line_color = line_color
     def set_shape_type(self,type):
         self.shape_type = type
+    def get_shape_type(self):
+        return self.shape_type
 
     def close(self):
         assert len(self.points) > 2
