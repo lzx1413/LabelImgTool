@@ -1,7 +1,9 @@
 from PyQt4.QtGui import *
 from PyQt4.QtCore import *
 
+
 class ZoomWidget(QSpinBox):
+
     def __init__(self, value=100):
         super(ZoomWidget, self).__init__()
         self.setButtonSymbols(QAbstractSpinBox.NoButtons)
@@ -17,4 +19,3 @@ class ZoomWidget(QSpinBox):
         fm = QFontMetrics(self.font())
         width = fm.width(str(self.maximum()))
         return QSize(width, height)
-

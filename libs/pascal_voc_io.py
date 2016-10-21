@@ -6,7 +6,15 @@ from lxml import etree
 
 
 class PascalVocWriter:
-    def __init__(self, foldername, filename, imgSize, databaseSrc='Unknown', localImgPath=None, shape_type=None):
+
+    def __init__(
+            self,
+            foldername,
+            filename,
+            imgSize,
+            databaseSrc='Unknown',
+            localImgPath=None,
+            shape_type=None):
         self.foldername = foldername
         self.filename = filename
         self.databaseSrc = databaseSrc
@@ -35,7 +43,7 @@ class PascalVocWriter:
                         len(self.boxlist) <= 0:
         '''
         if self.filename is None or \
-                        len(self.boxlist) <= 0:
+                len(self.boxlist) <= 0:
             return None
 
         top = Element('annotation')
@@ -113,7 +121,8 @@ class PascalVocWriter:
                 polygon = SubElement(object_item, 'polygon')
                 for i in xrange(int(each_object['point_num'])):
                     point = SubElement(polygon, 'point' + str(i))
-                    point.text = str(int(each_object[i][0])) + ',' + str(int(each_object[i][1]))
+                    point.text = str(
+                        int(each_object[i][0])) + ',' + str(int(each_object[i][1]))
                     print i, point.text
 
     def save(self, targetFile=None):
@@ -126,13 +135,14 @@ class PascalVocWriter:
             out_file = open(targetFile, 'w')
         print root
         out_file.write(self.prettify(root))
-        ##out_file.write(root)
+        # out_file.write(root)
         out_file.close()
 
 
 class PascalVocReader:
+
     def __init__(self, filepath):
-        ## shapes type:
+        # shapes type:
         ## [labbel, [(x1,y1), (x2,y2), (x3,y3), (x4,y4)], color, color]
         self.shapes = []
         self.filepath = filepath
@@ -141,12 +151,13 @@ class PascalVocReader:
 
     def getShapes(self):
         return self.shapes
+
     def getShapeType(self):
         return self.shape_type
 
-    def addPolygonShape(self,label,points):
-        points = [(point[0],point[1]) for point in points]
-        self.shapes.append((label,points,None,None,1))
+    def addPolygonShape(self, label, points):
+        points = [(point[0], point[1]) for point in points]
+        self.shapes.append((label, points, None, None, 1))
 
     def addShape(self, label, rect):
         xmin = rect[0]
@@ -154,7 +165,7 @@ class PascalVocReader:
         xmax = rect[2]
         ymax = rect[3]
         points = [(xmin, ymin), (xmin, ymax), (xmax, ymax), (xmax, ymin)]
-        self.shapes.append((label, points, None, None,0))
+        self.shapes.append((label, points, None, None, 0))
 
     def parseXML(self):
         assert self.filepath.endswith('.xml'), "Unsupport file format"
@@ -180,7 +191,7 @@ class PascalVocReader:
                     point = point.text.split(',')
                     point = [int(dot) for dot in point]
                     points.append(point)
-                self.addPolygonShape(label,points)
+                self.addPolygonShape(label, points)
         else:
             print 'unsupportable shape type'
 

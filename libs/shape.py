@@ -13,13 +13,14 @@ DEFAULT_SELECT_FILL_COLOR = QColor(0, 128, 255, 155)
 DEFAULT_VERTEX_FILL_COLOR = QColor(0, 255, 0, 255)
 DEFAULT_HVERTEX_FILL_COLOR = QColor(255, 0, 0)
 
+
 class Shape(object):
     P_SQUARE, P_ROUND = range(2)
-    RECT_SHAPE, POLYGON_SHAPE=range(2)
+    RECT_SHAPE, POLYGON_SHAPE = range(2)
     MOVE_VERTEX, NEAR_VERTEX = range(2)
 
-    ## The following class variables influence the drawing
-    ## of _all_ shape objects.
+    # The following class variables influence the drawing
+    # of _all_ shape objects.
     line_color = DEFAULT_LINE_COLOR
     fill_color = DEFAULT_FILL_COLOR
     select_line_color = DEFAULT_SELECT_LINE_COLOR
@@ -29,7 +30,8 @@ class Shape(object):
     point_type = P_ROUND
     point_size = 8
     scale = 1.0
-    def __init__(self, label=None,shape_type = 0, line_color=None):
+
+    def __init__(self, label=None, shape_type=0, line_color=None):
         self.label = label
         self.points = []
         self.fill = False
@@ -44,7 +46,7 @@ class Shape(object):
         self._highlightSettings = {
             self.NEAR_VERTEX: (4, self.P_ROUND),
             self.MOVE_VERTEX: (1.5, self.P_SQUARE),
-            }
+        }
 
         self._closed = False
 
@@ -53,8 +55,10 @@ class Shape(object):
             # with an object attribute. Currently this
             # is used for drawing the pending line a different color.
             self.line_color = line_color
-    def set_shape_type(self,type):
+
+    def set_shape_type(self, type):
         self.shape_type = type
+
     def get_shape_type(self):
         return self.shape_type
 
@@ -62,13 +66,16 @@ class Shape(object):
         assert len(self.points) > 2
         self._closed = True
         print len(self.points)
+
     def isRect(self):
         return self.shape_type == self.RECT_SHAPE
+
     def isPolygon(self):
         return self.shape_type == self.POLYGON_SHAPE
+
     def reachMaxPoints(self):
-        if len(self.points) >=self.max_piont_num:
-                 return True
+        if len(self.points) >= self.max_piont_num:
+            return True
         return False
 
     def addPoint(self, point):
@@ -99,10 +106,10 @@ class Shape(object):
         vrtx_path = QPainterPath()
 
         line_path.moveTo(self.points[0])
-            # Uncommenting the following line will draw 2 paths
-            # for the 1st vertex, and make it non-filled, which
-            # may be desirable.
-            #self.drawVertex(vrtx_path, 0)
+        # Uncommenting the following line will draw 2 paths
+        # for the 1st vertex, and make it non-filled, which
+        # may be desirable.
+        #self.drawVertex(vrtx_path, 0)
 
         for i, p in enumerate(self.points):
             line_path.lineTo(p)
@@ -115,7 +122,6 @@ class Shape(object):
         if self.fill:
             color = self.select_fill_color if self.selected else self.fill_color
             painter.fillPath(line_path, color)
-               
 
     def drawVertex(self, path, i):
         d = self.point_size / self.scale
@@ -129,9 +135,9 @@ class Shape(object):
         else:
             self.vertex_fill_color = Shape.vertex_fill_color
         if shape == self.P_SQUARE:
-            path.addRect(point.x() - d/2, point.y() - d/2, d, d)
+            path.addRect(point.x() - d / 2, point.y() - d / 2, d, d)
         elif shape == self.P_ROUND:
-            path.addEllipse(point, d/2.0, d/2.0)
+            path.addEllipse(point, d / 2.0, d / 2.0)
         else:
             assert False, "unsupported vertex shape"
 
@@ -167,8 +173,8 @@ class Shape(object):
         self._highlightIndex = None
 
     def copy(self):
-        shape = Shape("Copy of %s" % self.label )
-        shape.points= [p for p in self.points]
+        shape = Shape("Copy of %s" % self.label)
+        shape.points = [p for p in self.points]
         shape.fill = self.fill
         shape.selected = self.selected
         shape._closed = self._closed
@@ -186,4 +192,3 @@ class Shape(object):
 
     def __setitem__(self, key, value):
         self.points[key] = value
-
