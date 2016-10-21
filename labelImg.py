@@ -211,10 +211,10 @@ class MainWindow(QMainWindow, WindowMixin):
                                 'Ctrl+q', 'openAnnotation', u'Open Annotation')
 
         openNextImg = action('&Next Image', self.openNextImg,
-                             'n', 'next', u'Open Next')
+                             'Right', 'next', u'Open Next')
 
         openPrevImg = action('&Prev Image', self.openPrevImg,
-                             'p', 'prev', u'Open Prev')
+                             'Left', 'prev', u'Open Prev')
 
         save = action('&Save', self.saveFile,
                       'Ctrl+S', 'save', u'Save labels to file', enabled=False)
