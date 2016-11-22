@@ -34,7 +34,23 @@ Open cmd and go to $labelImg,
 
 `$ python labelImg.py`
 
-## Usage
+## Default File Framework
+
+|-Images
+
+|----------images_1
+
+|----------images_2
+
+|----------Annotation
+
+​                             |---images_1
+
+​                             |---images_2        
+
+the file containing annotations will be created by default
+
+## USAGE
 After cloning the code, you should run `$ make all` to generate the resource file.
 
 You can then start annotating by running `$ ./labelImg.py`. For usage
@@ -44,9 +60,17 @@ At the moment annotations are saved as an XML file. The format is PASCAL VOC for
 
 You can also see [ImageNet Utils](https://github.com/tzutalin/ImageNet_Utils) to download image, create a label text for machine learning, etc
 
+### Label and  Parsing
+
+support rectangle label and parsing labels
+
 ### Create pre-defined classes
 
 You can edit the [data/predefined_classes.txt](https://github.com/tzutalin/labelImg/blob/master/data/predefined_classes.txt) to load pre-defined classes
+
+You also can create labels with two levels in [data/predefined_sub_classes.txt](https://github.com/lzx1413/labelImg/blob/master/data/predefined_sub_classes.txt) 
+
+And the labels will be ranked by the frequency.
 
 ### General steps from scratch
 

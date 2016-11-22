@@ -11,4 +11,6 @@ dist/
 
 tags
 test.py
-.idea/workspace.xml
+.idea/
+.vscode/
+
