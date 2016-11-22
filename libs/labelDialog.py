@@ -4,13 +4,16 @@ from PyQt4.QtCore import *
 from lib import newIcon, labelValidator
 
 BB = QDialogButtonBox
+
+
 class SubListWidget(QDialog):
-    def __init__(self,parent = None,listItem = None):
-        self.select_text =None
-        super(SubListWidget,self).__init__(parent)
+
+    def __init__(self, parent=None, listItem=None):
+        self.select_text = None
+        super(SubListWidget, self).__init__(parent)
         self.listwidget = QListWidget(self)
         layout = QVBoxLayout()
-        if listItem is not None and len(listItem)>0:
+        if listItem is not None and len(listItem) > 0:
             for item in listItem:
                 self.listwidget.addItem(item)
         layout.addWidget(self.listwidget)
@@ -18,10 +21,10 @@ class SubListWidget(QDialog):
         self.listwidget.itemDoubleClicked.connect(self.listItemDoubleClicked)
         self.move(QCursor.pos())
 
-
     def get_select_item(self):
         return self.select_text if self.exec_() else None
-    def listItemDoubleClicked(self,tQListWidgetItem):
+
+    def listItemDoubleClicked(self, tQListWidgetItem):
         text = tQListWidgetItem.text().trimmed()
         self.select_text = text
         print text
@@ -31,7 +34,13 @@ class SubListWidget(QDialog):
 
 class LabelDialog(QDialog):
 
-    def __init__(self, text="Enter object label", parent=None, listItem=None,sub_label_items = None,label_fre_dic = None):
+    def __init__(
+            self,
+            text="Enter object label",
+            parent=None,
+            listItem=None,
+            sub_label_items=None,
+            label_fre_dic=None):
         super(LabelDialog, self).__init__(parent)
         self.edit = QLineEdit()
         self.edit.setText(text)
@@ -51,8 +60,7 @@ class LabelDialog(QDialog):
             self.sublistwidget = SubListWidget()
             if self.sub_labels_dic.keys() is not None and len(self.sub_labels_dic.keys()) > 0:
                 self.listWidget = QListWidget(self)
-            keys = self.sub_labels_dic.keys()
-            keys.sort()
+            keys = sorted(self.sub_labels_dic.keys())
             for item in keys:
                 self.listWidget.addItem(item)
             self.listWidget.itemClicked.connect(self.listItemClicked)
@@ -60,13 +68,17 @@ class LabelDialog(QDialog):
         elif listItem:
             sorted_labels = []
             if self.label_fre_dic:
-                print  label_fre_dic
-                sorted_labels= sorted(self.label_fre_dic, key=self.label_fre_dic.get, reverse=True)
+                print label_fre_dic
+                sorted_labels = sorted(
+                    self.label_fre_dic,
+                    key=self.label_fre_dic.get,
+                    reverse=True)
             if listItem is not None and len(listItem) > 0:
                 self.listWidget = QListWidget(self)
             for item in sorted_labels:
                 self.listWidget.addItem(item)
-            self.listWidget.itemDoubleClicked.connect(self.listItemDoubleClicked)
+            self.listWidget.itemDoubleClicked.connect(
+                self.listItemDoubleClicked)
             layout.addWidget(self.listWidget)
         self.setLayout(layout)
 
@@ -85,18 +97,16 @@ class LabelDialog(QDialog):
             self.move(QCursor.pos())
         return self.edit.text() if self.exec_() else None
 
-    def sublistwidgetclicked(self,tQListWidgetItem):
+    def sublistwidgetclicked(self, tQListWidgetItem):
         print tQListWidgetItem.text().trimmed()
         print 'doubleclicked'
 
-
-    def listItemDoubleClicked(self,tQListWidgetItem):
+    def listItemDoubleClicked(self, tQListWidgetItem):
         text = tQListWidgetItem.text().trimmed()
         self.edit.setText(text)
         self.validate()
 
-
-    def listItemClicked(self,tQListWidgetItem):
+    def listItemClicked(self, tQListWidgetItem):
         self.sublistwidget.close()
         labels = self.sub_labels_dic[str(tQListWidgetItem.text().trimmed())]
         label_dic = {}
@@ -105,8 +115,8 @@ class LabelDialog(QDialog):
                 label_dic[label] = self.label_fre_dic[label]
             else:
                 label_dic[label] = 0
-        sorted_labels= sorted(label_dic, key=label_dic.get, reverse=True)
-        self.sublistwidget = SubListWidget(listItem=sorted_labels,parent=self)
+        sorted_labels = sorted(label_dic, key=label_dic.get, reverse=True)
+        self.sublistwidget = SubListWidget(listItem=sorted_labels, parent=self)
         self.sublistwidget.show()
         self.edit.setText(self.sublistwidget.get_select_item())
         self.validate()
