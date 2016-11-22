@@ -23,12 +23,11 @@ def generate_shape_format(img_obj_dic):
             points.append((x + width, y + height))
             if len(obj) < 6:
                 continue
-            result = dict(label=obj[0], line_color=None, fill_color=None, points=points,shape_type=0
+            result = dict(label=obj[0], line_color=None, fill_color=None, points=points, shape_type=0
                           )
             shapes.append(result)
         result_list[key] = shapes
     return result_list
-
 
 
 def generate_xml_file(input_file1, input_file2, result_path):
@@ -45,12 +44,12 @@ def generate_xml_file(input_file1, input_file2, result_path):
     for image_item in image_list:
         image_item = image_item.split(',')
         tail_index = head_index + int(image_item[1])
-        img_obj_dic[image_item[0]+'b'] = img_obj_list[head_index:tail_index]
+        img_obj_dic[image_item[0] + 'b'] = img_obj_list[head_index:tail_index]
         head_index = tail_index
     format_dic = generate_shape_format(img_obj_dic)
     lf = LF.LabelFile()
     for key in format_dic:
-        lf.savePascalVocFormat(result_path+key+'.xml',None,format_dic[key],key)
+        lf.savePascalVocFormat(result_path + key + '.xml', None, format_dic[key], key)
 
     print format_dic
 

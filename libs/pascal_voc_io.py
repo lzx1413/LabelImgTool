@@ -137,6 +137,7 @@ class PascalVocReader:
         self.shapes = []
         self.filepath = filepath
         self.shape_type = None
+        self.image_size = []
         self.parseXML()
 
     def getShapes(self):
@@ -147,6 +148,9 @@ class PascalVocReader:
     def addPolygonShape(self,label,points):
         points = [(point[0],point[1]) for point in points]
         self.shapes.append((label,points,None,None,1))
+    def get_img_size(self):
+        if self.image_size:
+            return self.image_size
 
     def addShape(self, label, rect):
         xmin = rect[0]
@@ -161,7 +165,8 @@ class PascalVocReader:
         xmltree = ElementTree.parse(self.filepath).getroot()
         filename = xmltree.find('filename').text
         self.shape_type = xmltree.find('shape_type').text
-
+        self.image_size.append(int(xmltree.find('size').find('width').text))
+        self.image_size.append(int(xmltree.find('size').find('height').text))
         if self.shape_type == 'RECT':
             for object_iter in xmltree.findall('object'):
                 rects = []
