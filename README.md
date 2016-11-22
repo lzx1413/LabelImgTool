@@ -22,8 +22,6 @@ In order to build the resource and assets, you need to install pyqt4-dev-tools:
 
 `$ sudo apt-get install pyqt4-dev-tools`
 
-`$ make all`
-
 `$ ./labelImg.py`
 
 * Windows
@@ -70,9 +68,9 @@ The annotation will be saved to the folder you specifiy
 
 * Ctrl + s : Save
 
-* n : Next image
+* Right : Next image
 
-* p : Previous image
+* Left : Previous image
 
 ### Online Image Data Mode
 

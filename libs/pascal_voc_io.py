@@ -174,7 +174,10 @@ class PascalVocReader:
         assert self.filepath.endswith('.xml'), "Unsupport file format"
         xmltree = ElementTree.parse(self.filepath).getroot()
         filename = xmltree.find('filename').text
-        self.shape_type = xmltree.find('shape_type').text
+        if xmltree.find('shape_type'):
+            self.shape_type = xmltree.find('shape_type').text
+        else:
+            self.shape_type = 'RECT'
         self.image_size.append(int(xmltree.find('size').find('width').text))
         self.image_size.append(int(xmltree.find('size').find('height').text))
         if self.shape_type == 'RECT':
