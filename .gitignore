@@ -1,8 +1,5 @@
-
 icons/.DS_Store
 database/
-resources.py
-
 *.pyc
 .*.swp
 
@@ -13,5 +10,4 @@ tags
 test.py
 .idea/
 .vscode/
-
-icons/
+tools/
