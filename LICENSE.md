@@ -1,4 +1,4 @@
-Copyright (c) <2015-2016> Tzutalin
+Copyright (c) <2016-2017> lzx1413
 
 Copyright (C) 2013  MIT, Computer Science and Artificial Intelligence Laboratory. Bryan Russell, Antonio Torralba, William T. Freeman
 

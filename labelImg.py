@@ -2,6 +2,7 @@
 # -*- coding: utf8 -*-
 import _init_path
 import json
+import codecs
 import save_mask_image
 import os.path
 import re
@@ -14,6 +15,7 @@ import logging
 
 from PyQt4.QtGui import *
 from PyQt4.QtCore import *
+import qdarkstyle
 import time
 import MyDialog
 import ImageManagement
@@ -1135,7 +1137,7 @@ class MainWindow(QMainWindow, WindowMixin):
             self.loadFile(filename)
 
     def scanAllImages(self, folderPath):
-        extensions = {'.jpeg', '.jpg', '.png', '.bmp'}
+        extensions = ['.jpeg', '.jpg', '.png', '.bmp']
         images = []
 
         for root, dirs, files in os.walk(folderPath):
@@ -1454,7 +1456,7 @@ class MainWindow(QMainWindow, WindowMixin):
         predefined_subclasses_path = os.path.join(
             'data', 'predefined_sub_classes.txt')
         if os.path.exists(predefined_subclasses_path) is True:
-            with open(predefined_subclasses_path, 'rt') as f:
+            with codecs.open(predefined_subclasses_path,'r','utf8') as f:
                 lines = f.readlines()
                 print lines
                 for line in lines:
@@ -1533,6 +1535,7 @@ def read(filename, default=None):
 def main(argv):
     """Standard boilerplate Qt application code."""
     app = QApplication(argv)
+    app.setStyleSheet(qdarkstyle.load_stylesheet(pyside=False))
     app.setApplicationName(__appname__)
     app.setWindowIcon(newIcon("app"))
     win = MainWindow(argv[1] if len(argv) == 2 else None)

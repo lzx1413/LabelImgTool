@@ -23,6 +23,8 @@ In order to build the resource and assets, you need to install pyqt4-dev-tools:
 
 `sudo pip install lxml`
 
+`pip install qdarkstyle`
+
 `make all`
 
 `./labelImg.py`
@@ -103,7 +105,7 @@ The annotation will be saved to the folder you specifiy
 
 the server have to make the images in a folder that clint can get from http/https with **get** function
 
-1. settings
+* settings
 
 open File -->RemoteDBSettings(ctrl+m) like that
 
@@ -117,6 +119,9 @@ open File   -->ChangedDefaultSavedAnnotationDir(ctrl+r) to set the folder to sav
 
 2. if your settings are right,you will find the **Get Images** button becomes enabled and click it ,then you can annotate the images as before
 
+###Todo list
+* support pyqt5 and python 3
+* add more functions while adding parsing labels
 ### How to contribute
 Send a pull request
 

@@ -28,8 +28,8 @@ class PascalVocWriter:
             Return a pretty-printed XML string for the Element.
         """
         rough_string = ElementTree.tostring(elem, 'utf8')
-        reparsed = minidom.parseString(rough_string)
-        return reparsed.toprettyxml(indent="\t")
+        root = etree.fromstring(rough_string)
+        return etree.tostring(root,pretty_print=True)
 
     def genXML(self):
         """
@@ -100,7 +100,7 @@ class PascalVocWriter:
             object_item = SubElement(top, 'object')
             if each_object['name']:
                 name = SubElement(object_item, 'name')
-                name.text = str(each_object['name'])
+                name.text = unicode(each_object['name'])
             pose = SubElement(object_item, 'pose')
             pose.text = "Unspecified"
             truncated = SubElement(object_item, 'truncated')
@@ -133,7 +133,6 @@ class PascalVocWriter:
             out_file = open(self.filename + '.xml', 'w')
         else:
             out_file = open(targetFile, 'w')
-        print root
         out_file.write(self.prettify(root))
         # out_file.write(root)
         out_file.close()
@@ -172,9 +171,10 @@ class PascalVocReader:
 
     def parseXML(self):
         assert self.filepath.endswith('.xml'), "Unsupport file format"
-        xmltree = ElementTree.parse(self.filepath).getroot()
+        parser = etree.XMLParser(encoding='utf-8')
+        xmltree = ElementTree.parse(self.filepath,parser=parser).getroot()
         filename = xmltree.find('filename').text
-        if xmltree.find('shape_type'):
+        if xmltree.find('shape_type') is not None:
             self.shape_type = xmltree.find('shape_type').text
         else:
             self.shape_type = 'RECT'
