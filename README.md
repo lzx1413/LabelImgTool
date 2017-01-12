@@ -37,7 +37,7 @@ Open cmd and go to $labelImg,
 
 `$ python labelImg.py`
 
-## Default File Framework
+## Default file framework
 
 |---Images
 
@@ -53,7 +53,7 @@ Open cmd and go to $labelImg,
 
 the file containing annotations will be created by default.
 
-## USAGE
+## Usage
 After cloning the code, you should run `$ make all` to generate the resource file.
 
 You can then start annotating by running `$ ./labelImg.py`. For usage
@@ -63,7 +63,7 @@ At the moment annotations are saved as an XML file. The format is PASCAL VOC for
 
 You can also see [ImageNet Utils](https://github.com/tzutalin/ImageNet_Utils) to download image, create a label text for machine learning, etc
 
-### Label and  Parsing
+### Label and  parsing
 
 support rectangle label and parsing labels
 
@@ -99,7 +99,7 @@ The annotation will be saved to the folder you specifiy
 
 * Left : Previous image
 
-### Online Image Data Mode
+### Online image data mode
 
 the server have to make the images in a folder that clint can get from http/https with **get** function
 
