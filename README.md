@@ -12,17 +12,20 @@ The annotation file will be saved as an XML file. The annotation format is PASCA
 
 [![Demo video](https://j.gifs.com/NkWVz8.gif)](https://www.youtube.com/watch?v=p0nR2YsCY_U&feature=youtu.be)
 
-## Dependencies
-* Linux/Ubuntu/Mac
-
-Requires at least [Python 2.6](http://www.python.org/getit/) and has been tested with [PyQt
-4.8](http://www.riverbankcomputing.co.uk/software/pyqt/intro).
+## Build source and use it
+Requires at least [Python 2.6](http://www.python.org/getit/) and has been tested with [PyQt4.8](http://www.riverbankcomputing.co.uk/software/pyqt/intro).
 
 In order to build the resource and assets, you need to install pyqt4-dev-tools:
 
-`$ sudo apt-get install pyqt4-dev-tools`
+* Ubuntu
 
-`$ ./labelImg.py`
+`sudo apt-get install pyqt4-dev-tools`
+
+`sudo pip install lxml`
+
+`make all`
+
+`./labelImg.py`
 
 * Windows
 
@@ -36,19 +39,19 @@ Open cmd and go to $labelImg,
 
 ## Default File Framework
 
-|-Images
+|---Images
 
-|----------images_1
+​         |---images_1
 
-|----------images_2
+​         |---images_2
 
-|----------Annotation
+|---Annotation
 
-​                             |---images_1
+​          |---images_1
 
-​                             |---images_2        
+​          |---images_2        
 
-the file containing annotations will be created by default
+the file containing annotations will be created by default.
 
 ## USAGE
 After cloning the code, you should run `$ make all` to generate the resource file.
@@ -70,7 +73,7 @@ You can edit the [data/predefined_classes.txt](https://github.com/tzutalin/label
 
 You also can create labels with two levels in [data/predefined_sub_classes.txt](https://github.com/lzx1413/labelImg/blob/master/data/predefined_sub_classes.txt) 
 
-And the labels will be ranked by the frequency.
+And the labels will be ranked by the frequency you use it.
 
 ### General steps from scratch
 
@@ -106,11 +109,9 @@ open File -->RemoteDBSettings(ctrl+m) like that
 
 ![](screenshot/remote_settings.JPG)
 
-the remote image list is a file contenting the name of the images (a line is a image) the image will be cached in a folder
+the remote image list is a file contenting the name of the images (a line is a image) .
 
-created in the software file named database/pics/XXXX and this will take a lot of memory if there are a lot of images,and this
-
-will be modified in the future
+the image will be cached in a folder created in the software file named database/pics/XXXX and this will take a lot of memory if there are a lot of images,and this will be modified in the future.
 
 open File   -->ChangedDefaultSavedAnnotationDir(ctrl+r) to set the folder to save the results
 
