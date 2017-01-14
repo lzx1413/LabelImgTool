@@ -48,6 +48,7 @@ class Canvas(QWidget):
         self.hShape = None
         self.hVertex = None
         self._painter = QPainter()
+        self.font_size = 50
         self._cursor = CURSOR_DEFAULT
         # Menus:
         self.menus = (QMenu(), QMenu())
@@ -395,6 +396,7 @@ class Canvas(QWidget):
 
         p = self._painter
         p.begin(self)
+        p.setFont(QFont('Times',self.font_size,QFont.Bold))
         p.setRenderHint(QPainter.Antialiasing)
         p.setRenderHint(QPainter.HighQualityAntialiasing)
         p.setRenderHint(QPainter.SmoothPixmapTransform)

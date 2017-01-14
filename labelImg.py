@@ -819,7 +819,8 @@ class MainWindow(QMainWindow, WindowMixin):
 
     def remLabel(self, shape):
         item = self.shapesToItems[shape]
-        self.labelList.takeItem(self.labelList.row(item))
+        temp = self.labelList.takeItem(self.labelList.row(item))
+        temp = None
         del self.shapesToItems[shape]
         del self.itemsToShapes[item]
 

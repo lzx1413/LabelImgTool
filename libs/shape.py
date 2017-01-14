@@ -94,7 +94,6 @@ class Shape(object):
 
     def setOpen(self):
         self._closed = False
-
     def paint(self, painter):
         color = self.select_line_color if self.selected else self.line_color
         pen = QPen(color)
@@ -122,6 +121,14 @@ class Shape(object):
         if self.fill:
             color = self.select_fill_color if self.selected else self.fill_color
             painter.fillPath(line_path, color)
+        if self.label is not None and self.shape_type == self.RECT_SHAPE:
+            '''
+            painter.setBrush(QColor(255,255,255))
+            top_left_point = QPointF(self.points[0].x(),self.points[0].y()-50)
+            label_bg = QRectF(top_left_point,self.points[3])
+            painter.drawRect(label_bg)
+            '''
+            painter.drawText(self.points[0],self.label)
 
     def drawVertex(self, path, i):
         d = self.point_size / self.scale

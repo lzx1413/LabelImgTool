@@ -8,11 +8,12 @@ It is written in Python and uses Qt for its graphical interface.
 
 The annotation file will be saved as an XML file. The annotation format is PASCAL VOC format, and the format is the same as [ImageNet](http://www.image-net.org/)
 
-![](icons/demo.png)
+![](screenshot/bbox_label.png)
 
-[![Demo video](https://j.gifs.com/NkWVz8.gif)](https://www.youtube.com/watch?v=p0nR2YsCY_U&feature=youtu.be)
+![](screenshot/parse_label.png)
 
 ## Build source and use it
+
 Requires at least [Python 2.6](http://www.python.org/getit/) and has been tested with [PyQt4.8](http://www.riverbankcomputing.co.uk/software/pyqt/intro).
 
 In order to build the resource and assets, you need to install pyqt4-dev-tools:
@@ -21,7 +22,7 @@ In order to build the resource and assets, you need to install pyqt4-dev-tools:
 
 `sudo apt-get install pyqt4-dev-tools`
 
-`sudo pip install lxml`
+`pip install lxml`
 
 `pip install qdarkstyle`
 
@@ -31,7 +32,7 @@ In order to build the resource and assets, you need to install pyqt4-dev-tools:
 
 * Windows
 
-Need to download and setup [Python 2.6](https://www.python.org/downloads/windows/) or later and [PyQt4](https://www.riverbankcomputing.com/software/pyqt/download). You can also try to download the whole neccessary executable files from [my drive](https://copy.com/oyYjFzJwPb4tKl93) and install them.
+Need to download and setup [Python 2.6](https://www.python.org/downloads/windows/) or later and [PyQt4](https://www.riverbankcomputing.com/software/pyqt/download),lxml,qdarkstyle. You can also try to download the whole neccessary executable files from [my drive](https://copy.com/oyYjFzJwPb4tKl93) and install them.
 
 Open cmd and go to $labelImg, 
 
