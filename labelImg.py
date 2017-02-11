@@ -863,7 +863,7 @@ class MainWindow(QMainWindow, WindowMixin):
                 json.dump(self.label_num_dic, label_num_file)
             # the mask image will be save as file_mask.jpg etc.
             result_path = self.defaultSaveDir + \
-                imgFileName.replace('.', '_mask.')
+                imgFileName.replace('.', '_mask.').split('.')[0]+'.png'
             mask_writer = save_mask_image.label_mask_writer(
                 self.label_num_dic, result_path, self.image_size[1], self.image_size[0])
             mask_writer.save_mask_image(shapes)
