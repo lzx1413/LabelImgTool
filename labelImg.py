@@ -1463,10 +1463,11 @@ class MainWindow(QMainWindow, WindowMixin):
                 for line in lines:
                     line = line.strip()
                     line = line.split(':')
-                    print line
-                    self.label_sub_dic[line[0]] = line[1].strip().split(' ')
-        print self.label_sub_dic
-        if os.path.exists(predefined_classes_path) is True:
+                    label_list = line[1].strip().split(' ')
+                    self.label_sub_dic[line[0]] = label_list
+                    self.labelHist = self.labelHist +label_list
+            print self.label_sub_dic
+        elif os.path.exists(predefined_classes_path) is True:
             with open(predefined_classes_path) as f:
                 for line in f:
                     line = line.strip()
@@ -1478,6 +1479,7 @@ class MainWindow(QMainWindow, WindowMixin):
                         self.label_fre_dic[line] = 0
         if self.labelHist:
             num = 1
+            assert len(self.labelHist) <= 255, 'the num of labels should be less than 255 '
             for label in self.labelHist:
                 self.label_num_dic[label] = num
                 num += 1
