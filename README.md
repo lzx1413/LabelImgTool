@@ -22,6 +22,8 @@ In order to build the resource and assets, you need to install pyqt4-dev-tools:
 
 `sudo apt-get install pyqt4-dev-tools`
 
+`sudo apt-get install python-opencv`
+
 `pip install lxml`
 
 `pip install qdarkstyle`

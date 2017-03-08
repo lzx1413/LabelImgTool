@@ -29,7 +29,6 @@ def get_image(filename,label_num_dic = None):
 
     shapes = [format_shape(shape) for shape in raw_shapes]
     image_size = tVocParseReader.get_img_size()
-    print image_size
     result_path = '/mask'+filename.split('/')[1].split('.')[0]+'.png'
     mask_writer = save_mask_image.label_mask_writer(label_num_dic, result_path, image_size[0],
                                                     image_size[1])
