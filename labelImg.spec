@@ -5,8 +5,8 @@ block_cipher = None
 
 a = Analysis(['labelImg.py'],
              pathex=['D:\\workplace\\labelImg'],
-             binaries=None,
-             datas=None,
+             binaries=[],
+             datas=[],
              hiddenimports=[],
              hookspath=[],
              runtime_hooks=[],

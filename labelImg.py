@@ -1040,6 +1040,7 @@ class MainWindow(QMainWindow, WindowMixin):
                 os.path.basename(
                     unicode(filename)))
             self.image = image
+            self.image_size = [] #image size should be clear
             self.image_size.append(image.width())
             self.image_size.append(image.height())
             self.image_size.append(3)
