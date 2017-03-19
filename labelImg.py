@@ -1190,6 +1190,7 @@ class MainWindow(QMainWindow, WindowMixin):
                     relatviePath = os.path.join(root, file)
                     images.append(os.path.abspath(relatviePath))
         images.sort(key=lambda x: x.lower())
+        print images
         return images
 
     def changeSavedir(self, _value=False):
@@ -1288,6 +1289,7 @@ class MainWindow(QMainWindow, WindowMixin):
             ('Change saved folder', self.defaultSaveDir))
         self.statusBar().show()
         self.mImgList = self.scanAllImages(dirpath)
+        self.filename = None
         self.openNextImg()
         for imgPath in self.mImgList:
             item = QListWidgetItem(imgPath)
