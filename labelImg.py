@@ -1,36 +1,35 @@
 #!/usr/bin/env python
 # -*- coding: utf8 -*-
-import _init_path
-import json
 import codecs
-import save_mask_image
+import json
+import logging
 import os.path
 import re
-import sys
 import subprocess
-import requests
-from functools import partial
-from collections import defaultdict
-import logging
-
-from PyQt4.QtGui import *
-from PyQt4.QtCore import *
-import qdarkstyle
+import sys
 import time
-import RemoteDialog
-import SettingDialog
-import ImageManagement
-import resources
+from collections import defaultdict
+from functools import partial
 
-from libs.lib import struct, newAction, newIcon, addActions, fmtShortcut
-from libs.shape import Shape, DEFAULT_LINE_COLOR, DEFAULT_FILL_COLOR
+import qdarkstyle
+import requests
+from PyQt4.QtCore import *
+from PyQt4.QtGui import *
+
+from libs import RemoteDialog
 from libs.canvas import Canvas
-from libs.zoomWidget import ZoomWidget
-from libs.labelDialog import LabelDialog
 from libs.colorDialog import ColorDialog
+from libs.labelDialog import LabelDialog
 from libs.labelFile import LabelFile, LabelFileError
-from libs.toolBar import ToolBar
+from libs.lib import struct, newAction, newIcon, addActions, fmtShortcut
 from libs.pascal_voc_io import PascalVocReader
+from libs.shape import Shape, DEFAULT_LINE_COLOR, DEFAULT_FILL_COLOR
+from libs.toolBar import ToolBar
+from libs.zoomWidget import ZoomWidget
+from libs.ImageManagement import loadImageThread,loadOnlineImgMul
+from libs.SettingDialog import SettingDialog
+from libs.save_mask_image import label_mask_writer
+import resources
 
 __appname__ = 'labelImg'
 
@@ -607,12 +606,12 @@ class MainWindow(QMainWindow, WindowMixin):
 
     def loadOnlineImages(self):
         if self.image_list:
-            t = ImageManagement.loadImageThread(
+            t = loadImageThread(
                 self.database_url,
                 self.image_list,
                 self.mImgList,
                 self.loadFilePath)
-            ImageManagement.loadOnlineImgMul(
+            loadOnlineImgMul(
                 self.database_url,
                 self.image_list,
                 2,
@@ -625,7 +624,7 @@ class MainWindow(QMainWindow, WindowMixin):
                     break
 
     def setSettings(self):
-        settings_dialog = SettingDialog.SettingDialog(parent=self)
+        settings_dialog = SettingDialog(parent=self)
         if settings_dialog.exec_():
             self.enable_color_map = settings_dialog.get_color_map_state()
         settings_dialog.destroy()
@@ -901,7 +900,7 @@ class MainWindow(QMainWindow, WindowMixin):
             # the mask image will be save as file_mask.jpg etc.
             result_path = self.defaultSaveDir + \
                 imgFileName.replace('.', '_mask.').split('.')[0] + '.png'
-            mask_writer = save_mask_image.label_mask_writer(
+            mask_writer = label_mask_writer(
                 self.label_num_dic, result_path, self.image_size[1], self.image_size[0])
             mask_writer.save_mask_image(shapes)
         # Can add differrent annotation formats here

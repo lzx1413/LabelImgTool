@@ -1,9 +1,11 @@
 #coding:utf-8
-from libs.pascal_voc_io import PascalVocReader
-import save_mask_image
 import json
 import os
-from libs.canvas import Canvas
+
+from libs import save_mask_image
+from libs.pascal_voc_io import PascalVocReader
+
+
 def get_name_dic(file_path):
     with open(file_path) as infile:
         label_num_dic = json.load(infile)

@@ -1,5 +1,4 @@
-dog
-person
-cat
-tv
-car
+01-hair
+02-skin
+03-body
+None
