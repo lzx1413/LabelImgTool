@@ -396,7 +396,7 @@ class Canvas(QWidget):
 
         p = self._painter
         p.begin(self)
-        p.setFont(QFont('Times',self.font_size,QFont.Bold))
+        p.setFont(QFont('Times', self.font_size, QFont.Bold))
         p.setRenderHint(QPainter.Antialiasing)
         p.setRenderHint(QPainter.HighQualityAntialiasing)
         p.setRenderHint(QPainter.SmoothPixmapTransform)
@@ -407,7 +407,10 @@ class Canvas(QWidget):
         p.drawPixmap(0, 0, self.pixmap)
         Shape.scale = self.scale
         for shape in self.shapes:
-            if (shape.selected or not self._hideBackround) and self.isVisible(shape):
+            if shape.fill_color:
+                shape.fill = True
+                shape.paint(p)
+            elif (shape.selected or not self._hideBackround) and self.isVisible(shape):
                 shape.fill = shape.selected or shape == self.hShape
                 shape.paint(p)
         if self.current:
@@ -415,7 +418,6 @@ class Canvas(QWidget):
             self.line.paint(p)
         if self.selectedShapeCopy:
             self.selectedShapeCopy.paint(p)
-
         # Paint rect
         if self.current is not None and len(self.line) == 2:
             leftTop = self.line[0]

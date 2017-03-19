@@ -12,6 +12,7 @@ class SetRemoteDialog(QtGui.QDialog):
     def __init__(self, parent=None):
         QtGui.QDialog.__init__(self, parent)
         self.resize(320, 100)
+        self.setWindowTitle('set remote db')
         self.remote_cb = QtGui.QCheckBox("use remote database")
         if self.__class__.remote_mode:
             self.remote_cb.toggle()

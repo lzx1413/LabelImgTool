@@ -7,7 +7,7 @@ from PyQt4.QtCore import *
 from lib import distance
 
 DEFAULT_LINE_COLOR = QColor(0, 255, 0, 128)
-DEFAULT_FILL_COLOR = QColor(255, 0, 0, 128)
+DEFAULT_FILL_COLOR = QColor(255, 0, 0, 10)
 DEFAULT_SELECT_LINE_COLOR = QColor(255, 255, 255)
 DEFAULT_SELECT_FILL_COLOR = QColor(0, 128, 255, 155)
 DEFAULT_VERTEX_FILL_COLOR = QColor(0, 255, 0, 255)
@@ -94,6 +94,7 @@ class Shape(object):
 
     def setOpen(self):
         self._closed = False
+
     def paint(self, painter):
         color = self.select_line_color if self.selected else self.line_color
         pen = QPen(color)
@@ -128,7 +129,7 @@ class Shape(object):
             label_bg = QRectF(top_left_point,self.points[3])
             painter.drawRect(label_bg)
             '''
-            painter.drawText(self.points[0],self.label)
+            painter.drawText(self.points[0], self.label)
 
     def drawVertex(self, path, i):
         d = self.point_size / self.scale

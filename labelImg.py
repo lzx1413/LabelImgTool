@@ -17,7 +17,8 @@ from PyQt4.QtGui import *
 from PyQt4.QtCore import *
 import qdarkstyle
 import time
-import MyDialog
+import RemoteDialog
+import SettingDialog
 import ImageManagement
 import resources
 
@@ -70,6 +71,11 @@ class MainWindow(QMainWindow, WindowMixin):
             self.display_timer,
             SIGNAL("timeout()"),
             self.info_display)
+        # label color map
+        self.label_color_map = []
+        self.label_color_map_path = None
+        self.has_defined_color_map = False
+        self.enable_color_map = False
         # online database
         self.database_url = None
         self.connect_remote_db = None
@@ -106,6 +112,7 @@ class MainWindow(QMainWindow, WindowMixin):
         self.screencastViewer = "firefox"
         self.screencast = "https://youtu.be/p0nR2YsCY_U"
 
+        self.label_color_list = QListWidget()
         self.loadPredefinedClasses()
         # Main widgets and related state.
         self.labelDialog = LabelDialog(parent=self, listItem=self.labelHist)
@@ -147,6 +154,18 @@ class MainWindow(QMainWindow, WindowMixin):
         self.filedock = QDockWidget(u'File List', self)
         self.filedock.setObjectName(u'Files')
         self.filedock.setWidget(self.fileListContainer)
+        # label color map dock
+        self.label_color_list.itemDoubleClicked.connect(
+            self.labelColorDoubleClicked
+        )
+        label_color_layout = QVBoxLayout()
+        label_color_layout.setContentsMargins(0, 0, 0, 0)
+        label_color_layout.addWidget(self.label_color_list)
+        self.label_color_container = QWidget()
+        self.label_color_container.setLayout(label_color_layout)
+        self.label_color_dock = QDockWidget(u'Label Color Map', self)
+        self.label_color_dock.setObjectName(u'label_color')
+        self.label_color_dock.setWidget(self.label_color_container)
 
         self.zoomWidget = ZoomWidget()
         self.colorDialog = ColorDialog(parent=self)
@@ -170,12 +189,13 @@ class MainWindow(QMainWindow, WindowMixin):
 
         self.setCentralWidget(scroll)
         self.addDockWidget(Qt.RightDockWidgetArea, self.dock)
+        # add label color dock
+        self.addDockWidget(Qt.RightDockWidgetArea, self.label_color_dock)
         # add file list and dock to move faster
         self.addDockWidget(Qt.RightDockWidgetArea, self.filedock)
         self.dockFeatures = QDockWidget.DockWidgetClosable \
             | QDockWidget.DockWidgetFloatable
         self.dock.setFeatures(self.dock.features() ^ self.dockFeatures)
-
         # Actions
         action = partial(newAction, self)
         quit = action('&Quit', self.close,
@@ -187,6 +207,7 @@ class MainWindow(QMainWindow, WindowMixin):
                          'Ctrl+u', 'open', u'Open Dir')
         remote_settings = action('&Remote DB Settings', self.setRemoteUrl,
                                  'Ctrl+m', u'set remote url')
+        settings = action('Settings', self.setSettings, 'Ctrl+t', u'settings')
         loadOnlineImages = action(
             '&Get Images',
             self.loadOnlineImages,
@@ -458,6 +479,7 @@ class MainWindow(QMainWindow, WindowMixin):
              save,
              saveAs,
              remote_settings,
+             settings,
              close,
              None,
              quit))
@@ -559,10 +581,14 @@ class MainWindow(QMainWindow, WindowMixin):
         # Since loading the file may take some time, make sure it runs in the
         # background.
         self.queueEvent(partial(self.loadFile, self.filename))
-
+        self.queueEvent(partial(self.load_label_color_map))
+        if self.has_defined_color_map and len(
+                self.label_color_map) < len(
+                self.labelHist):
+            print(
+                'the num of color is less than labels, please add some color into data/label_color_map.txt')
         # Callbacks:
         self.zoomWidget.valueChanged.connect(self.paintCanvas)
-
         self.populateModeActions()
 
     # infomation display
@@ -598,8 +624,14 @@ class MainWindow(QMainWindow, WindowMixin):
                     self.openNextImg()
                     break
 
+    def setSettings(self):
+        settings_dialog = SettingDialog.SettingDialog(parent=self)
+        if settings_dialog.exec_():
+            self.enable_color_map = settings_dialog.get_color_map_state()
+        settings_dialog.destroy()
+
     def setRemoteUrl(self):
-        setRemoteUrldialog = MyDialog.SetRemoteDialog(parent=self)
+        setRemoteUrldialog = RemoteDialog.SetRemoteDialog(parent=self)
         if setRemoteUrldialog.exec_():
             self.database_url = 'http://' + setRemoteUrldialog.get_remote_url()
             self.remoteMode = setRemoteUrldialog.is_in_remote_mode()
@@ -831,12 +863,17 @@ class MainWindow(QMainWindow, WindowMixin):
             for x, y in points:
                 shape.addPoint(QPointF(x, y))
             shape.close()
+            if self.enable_color_map:
+                if label in self.labelHist:
+                    shape.fill_color = self.label_color_map[
+                        self.label_num_dic[label]]
             s.append(shape)
             self.addLabel(shape)
-            if line_color:
-                shape.line_color = QColor(*line_color)
-            if fill_color:
-                shape.fill_color = QColor(*fill_color)
+            if not self.enable_color_map:
+                if line_color:
+                    shape.line_color = QColor(*line_color)
+                if fill_color:
+                    shape.fill_color = QColor(*fill_color)
         self.canvas.loadShapes(s)
 
     def saveLabels(self, filename):
@@ -863,7 +900,7 @@ class MainWindow(QMainWindow, WindowMixin):
                 json.dump(self.label_num_dic, label_num_file)
             # the mask image will be save as file_mask.jpg etc.
             result_path = self.defaultSaveDir + \
-                imgFileName.replace('.', '_mask.').split('.')[0]+'.png'
+                imgFileName.replace('.', '_mask.').split('.')[0] + '.png'
             mask_writer = save_mask_image.label_mask_writer(
                 self.label_num_dic, result_path, self.image_size[1], self.image_size[0])
             mask_writer.save_mask_image(shapes)
@@ -939,6 +976,10 @@ class MainWindow(QMainWindow, WindowMixin):
                 self.label_fre_dic[str(text)] += 1
             else:
                 self.label_fre_dic[str(text)] = 1
+            new_shape = self.canvas.setLastLabel(text)
+            if self.enable_color_map:
+                new_shape.fill_color = self.label_color_map[
+                    self.label_num_dic[text]]
             self.addLabel(self.canvas.setLastLabel(text))
             if self.beginner():  # Switch to edit mode.
                 self.canvas.setEditing(True)
@@ -954,6 +995,8 @@ class MainWindow(QMainWindow, WindowMixin):
                 else:
                     self.label_num_dic[text] = max(
                         self.label_num_dic.values()) + 1
+                item = QListWidgetItem(text)
+                self.label_color_list.addItem(item)
                 self.labelHist.append(text)
         else:
             # self.canvas.undoLastLine()
@@ -1040,7 +1083,7 @@ class MainWindow(QMainWindow, WindowMixin):
                 os.path.basename(
                     unicode(filename)))
             self.image = image
-            self.image_size = [] #image size should be clear
+            self.image_size = []  # image size should be clear
             self.image_size.append(image.width())
             self.image_size.append(image.height())
             self.image_size.append(3)
@@ -1452,13 +1495,43 @@ class MainWindow(QMainWindow, WindowMixin):
         self.canvas.endMove(copy=False)
         self.setDirty()
 
+    def labelColorDoubleClicked(self):
+        # double clicked call back function
+        pass
+
+    def load_label_color_map(self):
+        if not self.label_color_map:
+            self.label_color_map = []
+        if self.label_color_map_path is None:
+            self.label_color_map_path = os.path.join(
+                'data', 'label_color_map.txt')
+        if os.path.exists(self.label_color_map_path):
+            with codecs.open(self.label_color_map_path, 'r', 'utf-8') as f:
+                lines = f.readlines()
+                print 'color map', lines
+                for line in lines:
+                    line = line.strip()
+                    line = line.split(',')
+                    line = [int(num) for num in line]
+                    # RGBA
+                    if len(line) == 4:
+                        self.label_color_map.append(
+                            QColor(line[0], line[1], line[2], line[3]))
+                    elif len(line) == 3:
+                        self.label_color_map.append(
+                            QColor(line[0], line[1], line[2], 128))
+                    else:
+                        print('the num of color is wrong')
+                self.has_defined_color_map = True
+                print(self.label_color_map)
+
     def loadPredefinedClasses(self):
         predefined_classes_path = os.path.join(
             'data', 'predefined_classes.txt')
         predefined_subclasses_path = os.path.join(
             'data', 'predefined_sub_classes.txt')
         if os.path.exists(predefined_subclasses_path) is True:
-            with codecs.open(predefined_subclasses_path,'r','utf8') as f:
+            with codecs.open(predefined_subclasses_path, 'r', 'utf8') as f:
                 lines = f.readlines()
                 print lines
                 for line in lines:
@@ -1466,7 +1539,7 @@ class MainWindow(QMainWindow, WindowMixin):
                     line = line.split(':')
                     label_list = line[1].strip().split(' ')
                     self.label_sub_dic[line[0]] = label_list
-                    self.labelHist = self.labelHist +label_list
+                    self.labelHist = self.labelHist + label_list
             print self.label_sub_dic
         elif os.path.exists(predefined_classes_path) is True:
             with open(predefined_classes_path) as f:
@@ -1480,8 +1553,13 @@ class MainWindow(QMainWindow, WindowMixin):
                         self.label_fre_dic[line] = 0
         if self.labelHist:
             num = 1
-            assert len(self.labelHist) <= 255, 'the num of labels should be less than 255 '
+            assert len(
+                self.labelHist) <= 255, 'the num of labels should be less than 255 '
             for label in self.labelHist:
+                #label - color
+                item = QListWidgetItem(label)
+                self.label_color_list.addItem(item)
+                # label - index
                 self.label_num_dic[label] = num
                 num += 1
 
