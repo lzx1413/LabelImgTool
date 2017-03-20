@@ -813,6 +813,17 @@ class MainWindow(QMainWindow, WindowMixin):
         self.menus.labelList.exec_(self.labelList.mapToGlobal(point))
 
     def editLabel(self, item=None):
+        #TODO: construct this once
+        if self.label_sub_dic:
+            self.labelDialog = LabelDialog(
+                parent=self,
+                sub_label_items=self.label_sub_dic,
+                label_fre_dic=self.label_fre_dic)
+        elif len(self.labelHist) > 0:
+            self.labelDialog = LabelDialog(
+                parent=self,
+                listItem=self.labelHist,
+                label_fre_dic=self.label_fre_dic)
         if not self.canvas.editing():
             return
         item = item if item else self.currentItem()
