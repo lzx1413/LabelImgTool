@@ -1,6 +1,6 @@
 # LabelImg
 
-[![Build Status](https://travis-ci.org/lzx1413/labelImgPlus.svg?branch=master)](https://travis-ci.org/lzx1413/labelImgPlus.svg?branch=master)
+[![Build Status](https://travis-ci.org/lzx1413/labelImgPlus.svg?branch=master)](https://travis-ci.org/lzx1413/labelImgPlus)
 
 LabelImg is a graphical image annotation tool.
 
