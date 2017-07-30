@@ -129,7 +129,7 @@ class Shape(object):
             label_bg = QRectF(top_left_point,self.points[3])
             painter.drawRect(label_bg)
             '''
-            painter.drawText(self.points[0], self.label)
+            #painter.drawText(self.points[0], self.label)
 
     def drawVertex(self, path, i):
         d = self.point_size / self.scale

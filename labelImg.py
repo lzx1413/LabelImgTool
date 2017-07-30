@@ -26,7 +26,7 @@ from libs.pascal_voc_io import PascalVocReader
 from libs.shape import Shape, DEFAULT_LINE_COLOR, DEFAULT_FILL_COLOR
 from libs.toolBar import ToolBar
 from libs.zoomWidget import ZoomWidget
-from libs.ImageManagement import loadImageThread,loadOnlineImgMul
+from libs.ImageManagement import loadImageThread, loadOnlineImgMul
 from libs.SettingDialog import SettingDialog
 from libs.save_mask_image import label_mask_writer
 import resources
@@ -70,6 +70,7 @@ class MainWindow(QMainWindow, WindowMixin):
             self.display_timer,
             SIGNAL("timeout()"),
             self.info_display)
+        # software mode
         # label color map
         self.label_color_map = []
         self.label_color_map_path = None
@@ -153,6 +154,18 @@ class MainWindow(QMainWindow, WindowMixin):
         self.filedock = QDockWidget(u'File List', self)
         self.filedock.setObjectName(u'Files')
         self.filedock.setWidget(self.fileListContainer)
+        # select a label
+        self.labelListWidget = QListWidget()
+        # self.labelListWidget.itemDoubleClicked.connect(
+        #    self.labelitemDoubleClicked)
+        LabellistLayout = QVBoxLayout()
+        LabellistLayout.setContentsMargins(0, 0, 0, 0)
+        LabellistLayout.addWidget(self.fileListWidget)
+        self.fileListContainer = QWidget()
+        self.fileListContainer.setLayout(filelistLayout)
+        self.labelSelectDock = QDockWidget(u'Select Label', self)
+        self.labelSelectDock.setObjectName(u'selectLabel')
+        # self.labelSelectDock.setWidget(self.la)
         # label color map dock
         self.label_color_list.itemDoubleClicked.connect(
             self.labelColorDoubleClicked
@@ -192,6 +205,8 @@ class MainWindow(QMainWindow, WindowMixin):
         self.addDockWidget(Qt.RightDockWidgetArea, self.label_color_dock)
         # add file list and dock to move faster
         self.addDockWidget(Qt.RightDockWidgetArea, self.filedock)
+        # select label
+        self.addDockWidget(Qt.RightDockWidgetArea, self.labelSelectDock)
         self.dockFeatures = QDockWidget.DockWidgetClosable \
             | QDockWidget.DockWidgetFloatable
         self.dock.setFeatures(self.dock.features() ^ self.dockFeatures)
@@ -287,6 +302,13 @@ class MainWindow(QMainWindow, WindowMixin):
             'Ctrl+Shift+A',
             'expert',
             u'Switch to advanced mode',
+            checkable=True)
+        clslabelMode = action(
+            '&CLS Mode',
+            self.toggleCLSMode,
+            'Ctrl+Shift+C',
+            'expert',
+            u'Switch to classification',
             checkable=True)
 
         hideAll = action('&Hide\nShape', partial(self.togglePolygons, False),
@@ -408,6 +430,7 @@ class MainWindow(QMainWindow, WindowMixin):
             createMode=createMode,
             editMode=editMode,
             advancedMode=advancedMode,
+            clslabelMode=clslabelMode,
             shapeLineColor=shapeLineColor,
             shapeFillColor=shapeFillColor,
             zoom=zoom,
@@ -484,7 +507,7 @@ class MainWindow(QMainWindow, WindowMixin):
              quit))
         addActions(self.menus.help, (help,))
         addActions(self.menus.view, (
-            labels, advancedMode, None,
+            labels, advancedMode,clslabelMode, None,
             hideAll, showAll, None,
             zoomIn, zoomOut, zoomOrg, None,
             fitWindow, fitWidth))
@@ -657,6 +680,7 @@ class MainWindow(QMainWindow, WindowMixin):
     def noShapes(self):
         return not self.itemsToShapes
 
+    def toggCLSMode(self,value = True):
     def toggleAdvancedMode(self, value=True):
         self._beginner = not value
         self.canvas.setEditing(True)
@@ -813,7 +837,7 @@ class MainWindow(QMainWindow, WindowMixin):
         self.menus.labelList.exec_(self.labelList.mapToGlobal(point))
 
     def editLabel(self, item=None):
-        #TODO: construct this once
+        # TODO: construct this once
         if self.label_sub_dic:
             self.labelDialog = LabelDialog(
                 parent=self,
@@ -912,7 +936,10 @@ class MainWindow(QMainWindow, WindowMixin):
             result_path = self.defaultSaveDir + \
                 imgFileName.replace('.', '_mask.').split('.')[0] + '.png'
             mask_writer = label_mask_writer(
-                self.label_num_dic, result_path, self.image_size[1], self.image_size[0])
+                self.label_num_dic,
+                result_path,
+                self.image_size[1],
+                self.image_size[0])
             mask_writer.save_mask_image(shapes)
         # Can add differrent annotation formats here
         try:
