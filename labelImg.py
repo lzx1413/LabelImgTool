@@ -1114,7 +1114,7 @@ class MainWindow(QMainWindow, WindowMixin):
             self.image_size = []  # image size should be clear
             self.image_size.append(image.height())
             self.image_size.append(image.width())
-            self.image_size.append(3)
+            self.image_size.append( 1 if image.isGrayscale() else 3)
             self.filename = filename
             self.canvas.loadPixmap(QPixmap.fromImage(image))
             if self.labelFile:
