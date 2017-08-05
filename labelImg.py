@@ -303,13 +303,6 @@ class MainWindow(QMainWindow, WindowMixin):
             'expert',
             u'Switch to advanced mode',
             checkable=True)
-        clslabelMode = action(
-            '&CLS Mode',
-            self.toggleCLSMode,
-            'Ctrl+Shift+C',
-            'expert',
-            u'Switch to classification',
-            checkable=True)
 
         hideAll = action('&Hide\nShape', partial(self.togglePolygons, False),
                          'Ctrl+H', 'hide', u'Hide all Boxs',
@@ -430,7 +423,6 @@ class MainWindow(QMainWindow, WindowMixin):
             createMode=createMode,
             editMode=editMode,
             advancedMode=advancedMode,
-            clslabelMode=clslabelMode,
             shapeLineColor=shapeLineColor,
             shapeFillColor=shapeFillColor,
             zoom=zoom,
@@ -507,7 +499,7 @@ class MainWindow(QMainWindow, WindowMixin):
              quit))
         addActions(self.menus.help, (help,))
         addActions(self.menus.view, (
-            labels, advancedMode,clslabelMode, None,
+            labels, advancedMode,None,
             hideAll, showAll, None,
             zoomIn, zoomOut, zoomOrg, None,
             fitWindow, fitWidth))
@@ -680,7 +672,6 @@ class MainWindow(QMainWindow, WindowMixin):
     def noShapes(self):
         return not self.itemsToShapes
 
-    def toggCLSMode(self,value = True):
     def toggleAdvancedMode(self, value=True):
         self._beginner = not value
         self.canvas.setEditing(True)
@@ -938,8 +929,8 @@ class MainWindow(QMainWindow, WindowMixin):
             mask_writer = label_mask_writer(
                 self.label_num_dic,
                 result_path,
-                self.image_size[1],
-                self.image_size[0])
+                self.image_size[0],
+                self.image_size[1])
             mask_writer.save_mask_image(shapes)
         # Can add differrent annotation formats here
         try:
@@ -1121,8 +1112,8 @@ class MainWindow(QMainWindow, WindowMixin):
                     unicode(filename)))
             self.image = image
             self.image_size = []  # image size should be clear
-            self.image_size.append(image.width())
             self.image_size.append(image.height())
+            self.image_size.append(image.width())
             self.image_size.append(3)
             self.filename = filename
             self.canvas.loadPixmap(QPixmap.fromImage(image))
