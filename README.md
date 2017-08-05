@@ -1,6 +1,6 @@
 # LabelImg
 
-[![Build Status](https://travis-ci.org/tzutalin/labelImg.png)](https://travis-ci.org/tzutalin/labelImg)
+[![Build Status](https://travis-ci.org/lzx1413/labelImgPlus.svg?branch=master)](https://travis-ci.org/lzx1413/labelImgPlus)
 
 LabelImg is a graphical image annotation tool.
 
@@ -125,6 +125,7 @@ open File   -->ChangedDefaultSavedAnnotationDir(ctrl+r) to set the folder to sav
 ###Todo list
 * support pyqt5 and python 3
 * add more functions while adding parsing labels
+* add class label function
 ### How to contribute
 Send a pull request
 
