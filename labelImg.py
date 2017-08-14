@@ -64,6 +64,7 @@ class MainWindow(QMainWindow, WindowMixin):
         # app mode 0=DET 1=SEG 2=CLS
         self.mode = 0
         self.mode_str = ['DET','SEG','CLS']
+
         # shape type
         self.shape_type = 'RECT'
         # info display
@@ -73,7 +74,6 @@ class MainWindow(QMainWindow, WindowMixin):
             self.display_timer,
             SIGNAL("timeout()"),
             self.info_display)
-        # software mode
         # label color map
         self.label_color_map = []
         self.label_color_map_path = None
@@ -87,6 +87,11 @@ class MainWindow(QMainWindow, WindowMixin):
         self.dowload_image_num = 0
         self.process_image_num = 0
         self.server_image_list = None
+
+        #cls labels
+        self.currentItemLabels = []
+        self.selectedLabel = None
+        self.clsLabelFile = 'Labels.txt'
 
         # Save as Pascal voc xml
         self.defaultSaveDir = None
@@ -113,10 +118,8 @@ class MainWindow(QMainWindow, WindowMixin):
         self._noSelectionSlot = False
         self._beginner = True
         self.screencastViewer = "firefox"
-        self.screencast = "https://youtu.be/p0nR2YsCY_U"
 
         self.label_color_list = QListWidget()
-        self.loadPredefinedClasses()
         # Main widgets and related state.
         self.labelDialog = LabelDialog(parent=self, listItem=self.labelHist)
         self.labelList = QListWidget()
@@ -157,18 +160,21 @@ class MainWindow(QMainWindow, WindowMixin):
         self.filedock = QDockWidget(u'File List', self)
         self.filedock.setObjectName(u'Files')
         self.filedock.setWidget(self.fileListContainer)
+
         # select a label
         self.labelListWidget = QListWidget()
-        # self.labelListWidget.itemDoubleClicked.connect(
-        #    self.labelitemDoubleClicked)
+        self.labelListWidget.itemDoubleClicked.connect(
+            self.labelitemDoubleClicked)
         LabellistLayout = QVBoxLayout()
         LabellistLayout.setContentsMargins(0, 0, 0, 0)
-        LabellistLayout.addWidget(self.fileListWidget)
-        self.fileListContainer = QWidget()
-        self.fileListContainer.setLayout(filelistLayout)
+        LabellistLayout.addWidget(self.labelListWidget)
+        self.labelListContainer = QWidget()
+        self.labelListContainer.setLayout(LabellistLayout)
         self.labelSelectDock = QDockWidget(u'Select Label', self)
         self.labelSelectDock.setObjectName(u'selectLabel')
-        # self.labelSelectDock.setWidget(self.la)
+        self.labelSelectDock.setWidget(self.labelListContainer)
+        if self.mode != 2:
+            self.labelSelectDock.setEnabled(False)
         # label color map dock
         self.label_color_list.itemDoubleClicked.connect(
             self.labelColorDoubleClicked
@@ -182,6 +188,9 @@ class MainWindow(QMainWindow, WindowMixin):
         self.label_color_dock.setObjectName(u'label_color')
         self.label_color_dock.setWidget(self.label_color_container)
 
+        #load predefined files
+        self.loadPredefinedDETClasses()
+        self.loadPredefinedCLSClasses()
         self.zoomWidget = ZoomWidget()
         self.colorDialog = ColorDialog(parent=self)
 
@@ -468,13 +477,16 @@ class MainWindow(QMainWindow, WindowMixin):
                 shapeFillColor),
             onLoadActive=(
                 close,
-                createMode,
-                editMode),
+            ),
             onDETActive =(
                 createRect,
+                createMode,
+                editMode
             ),
             onSEGActive =(
                 createPolygon,
+                createMode,
+                editMode
             ),
             onCLSActive =(
 
@@ -573,8 +585,10 @@ class MainWindow(QMainWindow, WindowMixin):
             'window/state': QByteArray,
             'savedir': QString,
             'lastOpenDir': QString,
+            'mode':QString
         }
         self.settings = settings = Settings(types)
+        self.mode = int(settings.get('mode',0))
         self.recentFiles = list(settings['recentFiles'])
         size = settings.get('window/size', QSize(600, 500))
         position = settings.get('window/position', QPoint(0, 0))
@@ -654,10 +668,16 @@ class MainWindow(QMainWindow, WindowMixin):
         if settings_dialog.exec_():
             self.enable_color_map = settings_dialog.get_color_map_state()
             setting_state = settings_dialog.get_setting_state()
+            if self.mode != setting_state['mode']:
+                self.resetState()
+                self.setClean()
             self.mode = setting_state['mode']
-            __appname__ = __name__.split('_')[0]+self.mode_str[self.mode]
-            if self.mode == 0 or 1:
+            if self.mode == 0 or self.mode == 1:
                 self.enable_color_map = setting_state['enable_color_map']
+                self.labelSelectDock.setEnabled(False)
+            if self.mode == 2:
+                self.actions.delete.setEnabled(True)
+                self.labelSelectDock.setEnabled(True)
             print 'change mode to',setting_state
         settings_dialog.destroy()
 
@@ -715,6 +735,24 @@ class MainWindow(QMainWindow, WindowMixin):
             filename = self.mImgList[currIndex]
             if filename:
                 self.loadFile(filename)
+    def labelColorDoubleClicked(self):
+        # double clicked call back function
+        pass
+    def addCLSLabel(self,label):
+        self.currentItemLabels.append(label)
+        item = QListWidgetItem(label)
+        item.setFlags(item.flags() | Qt.ItemIsUserCheckable)
+        item.setCheckState(Qt.Checked)
+        self.labelList.addItem(item)
+        self.itemsToShapes[item] = label
+        self.shapesToItems[label] = item
+        self.labelList.addItem(item)
+        self.setDirty()
+    def labelitemDoubleClicked(self, item=None):
+        if item:
+            label = str(item.text())
+            if label not in self.currentItemLabels:
+                self.addCLSLabel(label)
 
     def populateModeActions(self):
         if self.beginner():
@@ -774,6 +812,7 @@ class MainWindow(QMainWindow, WindowMixin):
     def resetState(self):
         self.itemsToShapes.clear()
         self.shapesToItems.clear()
+        self.currentItemLabels = []
         self.labelList.clear()
         self.filename = None
         self.imageData = None
@@ -811,7 +850,7 @@ class MainWindow(QMainWindow, WindowMixin):
     def createShape(self):
         assert self.beginner()
         self.canvas.setEditing(False)
-        self.actions.create.setEnabled(False)
+        self.actions.createRect.setEnabled(False)
         self.actions.createpolygon.setEnabled(False)
 
     def toggleDrawingSensitive(self, drawing=True):
@@ -904,32 +943,45 @@ class MainWindow(QMainWindow, WindowMixin):
         for action in self.actions.onShapesPresent:
             action.setEnabled(True)
 
-    def remLabel(self, shape):
-        item = self.shapesToItems[shape]
-        temp = self.labelList.takeItem(self.labelList.row(item))
-        temp = None
-        del self.shapesToItems[shape]
-        del self.itemsToShapes[item]
+    def remLabel(self, shape = None,label = None):
+        if self.mode == 0 or self.mode == 1:
+            item = self.shapesToItems[shape]
+            temp = self.labelList.takeItem(self.labelList.row(item))
+            temp = None
+            del self.shapesToItems[shape]
+            del self.itemsToShapes[item]
+        elif self.mode == 2:
+            items = self.labelList.selectedItems()
+            for item in items:
+                temp = self.labelList.takeItem(self.labelList.row(item))
+                temp = None
+            self.currentItemLabels.remove(label)
+            del self.shapesToItems[label]
+            del self.itemsToShapes[item]
+
 
     def loadLabels(self, shapes):
         s = []
-        for label, points, line_color, fill_color, shape_type in shapes:
-            shape = Shape(label=label, shape_type=shape_type)
-            for x, y in points:
-                shape.addPoint(QPointF(x, y))
-            shape.close()
-            if self.enable_color_map:
-                if label in self.labelHist:
-                    shape.fill_color = self.label_color_map[
-                        self.label_num_dic[label]]
-            s.append(shape)
-            self.addLabel(shape)
-            if not self.enable_color_map:
-                if line_color:
-                    shape.line_color = QColor(*line_color)
-                if fill_color:
-                    shape.fill_color = QColor(*fill_color)
-        self.canvas.loadShapes(s)
+        if self.mode == 0 or self.mode == 1:
+            for label, points, line_color, fill_color, shape_type in shapes:
+                shape = Shape(label=label, shape_type=shape_type)
+                for x, y in points:
+                    shape.addPoint(QPointF(x, y))
+                shape.close()
+                if self.enable_color_map:
+                    if label in self.labelHist:
+                        shape.fill_color = self.label_color_map[
+                            self.label_num_dic[label]]
+                s.append(shape)
+                self.addLabel(shape)
+                if not self.enable_color_map:
+                    if line_color:
+                        shape.line_color = QColor(*line_color)
+                    if fill_color:
+                        shape.fill_color = QColor(*fill_color)
+            self.canvas.loadShapes(s)
+
+
 
     def saveLabels(self, filename):
         lf = LabelFile()
@@ -948,12 +1000,12 @@ class MainWindow(QMainWindow, WindowMixin):
         shapes = [format_shape(shape) for shape in self.canvas.shapes]
         print 'shape type', self.shape_type
         imgFileName = os.path.basename(self.filename)
-        if self.shape_type == 'POLYGON':
+        if self.mode == 1:#seg mode
             with open(self.defaultSaveDir + 'label_num_dic.json', 'w') as label_num_file:
                 for key in self.label_num_dic:
                     print type(key)
                 json.dump(self.label_num_dic, label_num_file)
-            # the mask image will be save as file_mask.jpg etc.
+            # the mask image will be save as file_mask.png etc.
             result_path = self.defaultSaveDir + \
                 imgFileName.replace('.', '_mask.').split('.')[0] + '.png'
             mask_writer = label_mask_writer(
@@ -963,32 +1015,43 @@ class MainWindow(QMainWindow, WindowMixin):
                 self.image_size[1])
             mask_writer.save_mask_image(shapes)
         # Can add differrent annotation formats here
-        try:
-            if self.usingPascalVocFormat is True:
-                savefilename = self.defaultSaveDir + imgFileName.split('.')[
-                    0] + '.xml'  # the mask image will be save as file_mask.jpg etc.
-                print 'savePascalVocFormat save to:' + savefilename
-                lf.savePascalVocFormat(
-                    savefilename, self.image_size, shapes, unicode(
-                        self.filename), shape_type_=self.shape_type)
-                self.process_image_num += 1
-            else:
-                lf.save(
-                    filename,
-                    shapes,
-                    unicode(
-                        self.filename),
-                    self.imageData,
-                    self.lineColor.getRgb(),
-                    self.fillColor.getRgb())
-                self.labelFile = lf
-                self.filename = filename
-                self.process_image_num += 1
-            return True
-        except LabelFileError as e:
-            self.errorMessage(u'Error saving label data',
-                              u'<b>%s</b>' % e)
-            return False
+        if self.mode == 0 or self.mode == 1:# seg and det mode
+            try:
+                if self.usingPascalVocFormat is True:
+                    savefilename = self.defaultSaveDir + imgFileName.split('.')[
+                        0] + '.xml'  # the mask image will be save as file_mask.jpg etc.
+                    print 'savePascalVocFommat save to:' + savefilename
+                    lf.savePascalVocFormat(
+                        savefilename, self.image_size, shapes, unicode(
+                            self.filename), shape_type_=self.shape_type)
+                    self.process_image_num += 1
+                else:
+                    lf.save(
+                        filename,
+                        shapes,
+                        unicode(
+                            self.filename),
+                        self.imageData,
+                        self.lineColor.getRgb(),
+                        self.fillColor.getRgb())
+                    self.labelFile = lf
+                    self.filename = filename
+                    self.process_image_num += 1
+                return True
+            except LabelFileError as e:
+                self.errorMessage(u'Error saving label data',
+                                  u'<b>%s</b>' % e)
+                return False
+        elif self.mode == 2:#cls mode
+            savefilename = self.defaultSaveDir + imgFileName.split('.')[
+                        0] + '.txt'  # the mask image will be save as file_mask.jpg etc.
+            print savefilename
+            with codecs.open(savefilename,'w','utf8') as outfile:
+                for item in self.currentItemLabels:
+                    outfile.write(item+'\n')
+
+
+
 
     def copySelectedShape(self):
         self.addLabel(self.canvas.copySelectedShape())
@@ -997,9 +1060,13 @@ class MainWindow(QMainWindow, WindowMixin):
 
     def labelSelectionChanged(self):
         item = self.currentItem()
-        if item and self.canvas.editing():
-            self._noSelectionSlot = True
-            self.canvas.selectShape(self.itemsToShapes[item])
+        if self.mode == 0 or self.mode == 1:
+            if item and self.canvas.editing():
+                self._noSelectionSlot = True
+                self.canvas.selectShape(self.itemsToShapes[item])
+        elif self.mode == 2:
+            if item:
+                self.selectedLabel = self.itemsToShapes[item]
 
     def labelItemChanged(self, item):
         shape = self.itemsToShapes[item]
@@ -1094,6 +1161,13 @@ class MainWindow(QMainWindow, WindowMixin):
     def togglePolygons(self, value):
         for item, shape in self.itemsToShapes.iteritems():
             item.setCheckState(Qt.Checked if value else Qt.Unchecked)
+    def loadCLSFile(self,filepath):
+        if os.path.exists(filepath):
+            with open(filepath) as infile:
+                lines = infile.readlines()
+                for line in lines:
+                    label = line.strip()
+                    self.addCLSLabel(label)
 
     def loadFile(self, filename=None):
         """Load the specified file, or the last opened file if None."""
@@ -1136,7 +1210,7 @@ class MainWindow(QMainWindow, WindowMixin):
             self.status("Loaded %s" % os.path.basename(unicode(filename)))
             self.setWindowTitle(
                 __appname__ +
-                ' ' +
+                ' ' +self.mode_str[self.mode]+' '+
                 os.path.basename(
                     unicode(filename)))
             self.image = image
@@ -1156,15 +1230,20 @@ class MainWindow(QMainWindow, WindowMixin):
             self.toggleActions(True)
 
             # Label xml file and show bound box according to its filename
-            if self.usingPascalVocFormat is True and \
-                    self.defaultSaveDir is not None:
-                basename = os.path.basename(os.path.splitext(self.filename)[0])
-                xmlPath = os.path.join(self.defaultSaveDir, basename + '.xml')
-                self.loadPascalXMLByFilename(xmlPath)
-                if self.shape_type == 'POLYGON':
-                    self.canvas.set_shape_type(1)
-                elif self.shape_type == 'RECT':
-                    self.canvas.set_shape_type(0)
+            basename = os.path.basename(os.path.splitext(self.filename)[0])
+            if self.mode == 0 or self.mode == 1:
+                if self.usingPascalVocFormat is True and \
+                        self.defaultSaveDir is not None:
+                    xmlPath = os.path.join(self.defaultSaveDir, basename + '.xml')
+                    self.loadPascalXMLByFilename(xmlPath)
+                    if self.shape_type == 'POLYGON':
+                        self.canvas.set_shape_type(1)
+                    elif self.shape_type == 'RECT':
+                        self.canvas.set_shape_type(0)
+            elif self.mode == 2:
+                if self.defaultSaveDir is not None:
+                    txtPath = os.path.join(self.defaultSaveDir, basename + '.txt')
+                    self.loadCLSFile(txtPath)
 
             return True
         return False
@@ -1206,6 +1285,7 @@ class MainWindow(QMainWindow, WindowMixin):
         if not self.mayContinue():
             event.ignore()
         s = self.settings
+        s['mode'] = str(self.mode)
         # If it loads images from dir, don't load it at the begining
         if self.dirname is None:
             s['filename'] = self.filename if self.filename else QString()
@@ -1357,8 +1437,8 @@ class MainWindow(QMainWindow, WindowMixin):
         if self.autoSaving is True and self.defaultSaveDir is not None:
             if self.dirty is True and self.hasLabels():
                 self.saveFile()
-        if not self.mayContinue():
-            return
+        #if not self.mayContinue():
+        #    return
 
         if len(self.mImgList) <= 0:
             return
@@ -1424,19 +1504,20 @@ class MainWindow(QMainWindow, WindowMixin):
             if self.defaultSaveDir is not None and len(
                     str(self.defaultSaveDir)):
                 print 'handle the image:' + self.filename
-                imgFileName = os.path.basename(self.filename)
-                savedFileName = os.path.splitext(
-                    imgFileName)[0] + LabelFile.suffix
-                savedPath = os.path.join(
-                    str(self.defaultSaveDir), savedFileName)
-                self._saveFile(savedPath)
+                self._saveFile(self.filename)
             else:
                 self._saveFile(self.filename if self.labelFile
                                else self.saveFileDialog())
         else:
             imgFileName = os.path.basename(self.filename)
-            savedFileName = os.path.splitext(imgFileName)[0] + LabelFile.suffix
-            savedPath = os.path.join(str(self.defaultSaveDir), savedFileName)
+            if self.mode == 0 or self.mode == 1:
+                savedFileName = os.path.splitext(
+                imgFileName)[0] + LabelFile.suffix
+            elif self.mode == 2:
+                savedFileName = os.path.splitext(
+                imgFileName)[0] + '.txt'
+            savedPath = os.path.join(
+            str(self.defaultSaveDir), savedFileName)
             if os.path.isfile(savedPath):
                 os.remove(savedPath)
 
@@ -1478,11 +1559,16 @@ class MainWindow(QMainWindow, WindowMixin):
 
     # Message Dialogs. #
     def hasLabels(self):
-        if not self.itemsToShapes:
-            # self.errorMessage(u'No objects labeled',
-             # u'You must label at least one object to save the file.')
-            return False
-        return True
+        if self.mode == 0 or self.mode == 1:
+            if not self.itemsToShapes:
+                # self.errorMessage(u'No objects labeled',
+                # u'You must label at least one object to save the file.')
+                return False
+            return True
+        elif self.mode == 2:
+            if not self.currentItemLabels:
+                return False
+            return True
 
     def mayContinue(self):
         return not (self.dirty and not self.discardChangesDialog())
@@ -1523,7 +1609,7 @@ class MainWindow(QMainWindow, WindowMixin):
         yes, no = QMessageBox.Yes, QMessageBox.No
         msg = u'You are about to permanently delete this Box, proceed anyway?'
         if yes == QMessageBox.warning(self, u'Attention', msg, yes | no):
-            self.remLabel(self.canvas.deleteSelected())
+            self.remLabel(shape=self.canvas.deleteSelected(),label=self.selectedLabel)
             self.setDirty()
             if self.noShapes():
                 for action in self.actions.onShapesPresent:
@@ -1554,9 +1640,6 @@ class MainWindow(QMainWindow, WindowMixin):
         self.canvas.endMove(copy=False)
         self.setDirty()
 
-    def labelColorDoubleClicked(self):
-        # double clicked call back function
-        pass
 
     def load_label_color_map(self):
         if not self.label_color_map:
@@ -1583,8 +1666,37 @@ class MainWindow(QMainWindow, WindowMixin):
                         print('the num of color is wrong')
                 self.has_defined_color_map = True
                 print(self.label_color_map)
+    def loadPredefinedCLSClasses(self):
+        self.labelHist = []
+        predefined_classes_path = os.path.join(
+            'data','predefined_cls_classes.txt'
+        )
+        if os.path.exists(predefined_classes_path) is True:
+            with codecs.open(predefined_classes_path,'r','utf8') as f:
+                lines = f.readlines()
+                for line in lines:
+                    line = line.strip()
+                    if self.labelHist is None:
+                        self.lablHist = [line]
+                    else:
+                        self.labelHist.append(line)
+        if self.labelHist:
+            num = 0
+            assert len(
+                self.labelHist) <= 255, 'the num of labels should be less than 255 '
+            for label in self.labelHist:
+                # label - index
+                self.label_num_dic[label] = num
+                num += 1
+        #add label to widget
+        for cls_label in self.labelHist:
+            item = QListWidgetItem(cls_label)
+            self.labelListWidget.addItem(item)
+            #self.labelListWidget.addItem(item)
 
-    def loadPredefinedClasses(self):
+
+    def loadPredefinedDETClasses(self):
+        self.labelHist = []
         predefined_classes_path = os.path.join(
             'data', 'predefined_classes.txt')
         predefined_subclasses_path = os.path.join(
@@ -1601,7 +1713,7 @@ class MainWindow(QMainWindow, WindowMixin):
                     self.labelHist = self.labelHist + label_list
             print self.label_sub_dic
         elif os.path.exists(predefined_classes_path) is True:
-            with open(predefined_classes_path) as f:
+            with codecs.open(predefined_classes_path,'r','utf8') as f:
                 for line in f:
                     line = line.strip()
                     if self.labelHist is None:

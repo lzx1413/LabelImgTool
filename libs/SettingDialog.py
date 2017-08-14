@@ -46,11 +46,11 @@ class SettingDialog(QtGui.QDialog):
 
     def createCLSoptGroup(self):
         self.clsgroupBox = QtGui.QGroupBox("& CLS options")
-        self.single_label_rb = QtGui.QRadioButton("single label")
-        self.multi_label_rb = QtGui.QRadioButton("multi label")
+        #self.single_label_rb = QtGui.QRadioButton("single label")
+        #self.multi_label_rb = QtGui.QRadioButton("multi label")
         vbox = QtGui.QVBoxLayout()
-        vbox.addWidget(self.single_label_rb)
-        vbox.addWidget(self.multi_label_rb)
+        #vbox.addWidget(self.single_label_rb)
+        #vbox.addWidget(self.multi_label_rb)
         vbox.addStretch(True)
         self.clsgroupBox.setLayout(vbox)
         return self.clsgroupBox
