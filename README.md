@@ -122,10 +122,10 @@ open File   -->ChangedDefaultSavedAnnotationDir(ctrl+r) to set the folder to sav
 
 2. if your settings are right,you will find the **Get Images** button becomes enabled and click it ,then you can annotate the images as before
 
-###Change list
+### Change list
 17-08-14  add class label function
 
-###Todo list
+### Todo list
 * support pyqt5 and python 3
 * add more functions while adding parsing labels
 * refine the setting functions
