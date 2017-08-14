@@ -31,7 +31,7 @@ from libs.SettingDialog import SettingDialog
 from libs.save_mask_image import label_mask_writer
 import resources
 
-__appname__ = 'labelImg'
+__appname__ = 'labelImgPlus'
 
 
 # Utility functions and classes.
@@ -61,6 +61,9 @@ class MainWindow(QMainWindow, WindowMixin):
     def __init__(self, filename=None):
         super(MainWindow, self).__init__()
         self.setWindowTitle(__appname__)
+        # app mode 0=DET 1=SEG 2=CLS
+        self.mode = 0
+        self.mode_str = ['DET','SEG','CLS']
         # shape type
         self.shape_type = 'RECT'
         # info display
@@ -229,7 +232,7 @@ class MainWindow(QMainWindow, WindowMixin):
             icon='open',
             tip=u'load images')
 
-        createpolygon = action(
+        createPolygon = action(
             '&Create\nPolygon',
             self.createPolygon,
             'Ctrl+p',
@@ -284,7 +287,7 @@ class MainWindow(QMainWindow, WindowMixin):
             u'Move and edit Boxs',
             enabled=False)
 
-        create = action('Create\nRectBox', self.createRect,
+        createRect = action('Create\nRectBox', self.createRect,
                         'Ctrl+N', 'new', u'Draw a new Box', enabled=False)
         delete = action('Delete\nShape', self.deleteSelectedShape,
                         'Delete', 'delete', u'Delete', enabled=False)
@@ -397,7 +400,7 @@ class MainWindow(QMainWindow, WindowMixin):
         labels.setText('Show/Hide Label Panel')
         labels.setShortcut('Ctrl+Shift+L')
 
-        # Lavel list context menu.
+        #Label list context menu.
         labelMenu = QMenu()
         addActions(labelMenu, (edit, delete))
         self.labelList.setContextMenuPolicy(Qt.CustomContextMenu)
@@ -415,11 +418,11 @@ class MainWindow(QMainWindow, WindowMixin):
             remote_mode=(
                 loadOnlineImages,
                 loadOnlineImages),
-            create=create,
+            createRect=createRect,
             delete=delete,
             edit=edit,
             copy=copy,
-            createpolygon=createpolygon,
+            createpolygon=createPolygon,
             createMode=createMode,
             editMode=editMode,
             advancedMode=advancedMode,
@@ -449,14 +452,14 @@ class MainWindow(QMainWindow, WindowMixin):
                 color1,
                 color2),
             beginnerContext=(
-                create,
-                createpolygon,
+                #createRect,
+                #createPolygon,
                 edit,
                 copy,
                 delete),
             advancedContext=(
                 createMode,
-                createpolygon,
+                createPolygon,
                 editMode,
                 edit,
                 copy,
@@ -465,15 +468,23 @@ class MainWindow(QMainWindow, WindowMixin):
                 shapeFillColor),
             onLoadActive=(
                 close,
-                create,
                 createMode,
-                createpolygon,
                 editMode),
+            onDETActive =(
+                createRect,
+            ),
+            onSEGActive =(
+                createPolygon,
+            ),
+            onCLSActive =(
+
+            ),
             onShapesPresent=(
                 saveAs,
                 hideAll,
                 showAll))
 
+        #tool menus settings
         self.menus = struct(
             file=self.menu('&File'),
             edit=self.menu('&Edit'),
@@ -521,8 +532,8 @@ class MainWindow(QMainWindow, WindowMixin):
             openPrevImg,
             save,
             None,
-            create,
-            createpolygon,
+            createRect,
+            createPolygon,
             copy,
             delete,
             None,
@@ -642,6 +653,12 @@ class MainWindow(QMainWindow, WindowMixin):
         settings_dialog = SettingDialog(parent=self)
         if settings_dialog.exec_():
             self.enable_color_map = settings_dialog.get_color_map_state()
+            setting_state = settings_dialog.get_setting_state()
+            self.mode = setting_state['mode']
+            __appname__ = __name__.split('_')[0]+self.mode_str[self.mode]
+            if self.mode == 0 or 1:
+                self.enable_color_map = setting_state['enable_color_map']
+            print 'change mode to',setting_state
         settings_dialog.destroy()
 
     def setRemoteUrl(self):
@@ -671,6 +688,9 @@ class MainWindow(QMainWindow, WindowMixin):
 
     def noShapes(self):
         return not self.itemsToShapes
+    def toggleDETMode(self, value = True):
+        pass
+
 
     def toggleAdvancedMode(self, value=True):
         self._beginner = not value
@@ -706,7 +726,7 @@ class MainWindow(QMainWindow, WindowMixin):
         self.canvas.menus[0].clear()
         addActions(self.canvas.menus[0], menu)
         self.menus.edit.clear()
-        actions = (self.actions.create,) if self.beginner() \
+        actions = (self.actions.createRect,) if self.beginner() \
             else (self.actions.createMode, self.actions.editMode)
         addActions(self.menus.edit, actions + self.actions.editMenu)
 
@@ -725,8 +745,8 @@ class MainWindow(QMainWindow, WindowMixin):
     def setClean(self):
         self.dirty = False
         self.actions.save.setEnabled(False)
-        self.actions.create.setEnabled(True)
-        self.actions.createpolygon.setEnabled(True)
+        self.actions.createRect.setEnabled(False)
+        self.actions.createpolygon.setEnabled(False)
 
     def toggleActions(self, value=True):
         """Enable/Disable widgets which depend on an opened image."""
@@ -734,6 +754,16 @@ class MainWindow(QMainWindow, WindowMixin):
             z.setEnabled(value)
         for action in self.actions.onLoadActive:
             action.setEnabled(value)
+        print 'app mode',self.mode
+        if self.mode == 0:
+            for action in self.actions.onDETActive:
+                action.setEnabled(value)
+        if self.mode == 1:
+            for action in self.actions.onSEGActive:
+                action.setEnabled(value)
+        if self.mode == 0:
+            for action in self.actions.onCLSActive:
+                action.setEnabled(value)
 
     def queueEvent(self, function):
         QTimer.singleShot(0, function)
@@ -1068,7 +1098,6 @@ class MainWindow(QMainWindow, WindowMixin):
     def loadFile(self, filename=None):
         """Load the specified file, or the last opened file if None."""
         self.resetState()
-        #        filename = filename.replace('\\','/')
         self.canvas.setEnabled(False)
         if filename is None:
             filename = self.settings['filename']

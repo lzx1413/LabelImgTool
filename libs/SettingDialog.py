@@ -5,6 +5,8 @@ import re
 
 class SettingDialog(QtGui.QDialog):
     enable_color_map = False
+    mode = 0 #0=det, 1=seg, 2=cls
+
 
     def __init__(self, parent):
         QtGui.QDialog.__init__(self, parent)
@@ -35,8 +37,6 @@ class SettingDialog(QtGui.QDialog):
 
     def createDEToptGroup(self):
         self.detgroupBox = QtGui.QGroupBox("& DET options")
-        self.detgroupBox.setCheckable(True)
-        self.detgroupBox.setChecked(False)
         self.enable_show_label_cb = QtGui.QCheckBox('enable show label name')
         vbox = QtGui.QVBoxLayout()
         vbox.addWidget(self.enable_show_label_cb)
@@ -46,8 +46,6 @@ class SettingDialog(QtGui.QDialog):
 
     def createCLSoptGroup(self):
         self.clsgroupBox = QtGui.QGroupBox("& CLS options")
-        self.clsgroupBox.setCheckable(True)
-        self.clsgroupBox.setChecked(False)
         self.single_label_rb = QtGui.QRadioButton("single label")
         self.multi_label_rb = QtGui.QRadioButton("multi label")
         vbox = QtGui.QVBoxLayout()
@@ -59,13 +57,13 @@ class SettingDialog(QtGui.QDialog):
 
     def createSEGoptGroup(self):
         self.seggroupBox = QtGui.QGroupBox("& SEG options")
-        self.seggroupBox.setCheckable(True)
-        self.seggroupBox.setChecked(False)
         self.enable_color_map_cb = QtGui.QCheckBox('enable color map')
         if self.__class__.enable_color_map:
             self.enable_color_map_cb.toggle()
         self.enable_color_map_cb.stateChanged.connect(
             self.change_color_enable_state)
+        if self.__class__.enable_color_map:
+            self.enable_color_map_cb.setChecked(True)
         vbox = QtGui.QVBoxLayout()
         vbox.addWidget(self.enable_color_map_cb)
         vbox.addStretch(True)
@@ -81,8 +79,15 @@ class SettingDialog(QtGui.QDialog):
         grid.addWidget(self.createDEToptGroup(),1,0)
         grid.addWidget(self.createCLSoptGroup(),2,0)
         grid.addWidget(self.createSEGoptGroup(),3,0)
-        self.DET_mode_rb.setChecked(True)
-        self.DET_model_selected()
+        if self.__class__.mode == 0:
+            self.DET_mode_rb.setChecked(True)
+            self.DET_model_selected()
+        elif self.__class__.mode == 1:
+            self.SEG_mode_rb.setChecked(True)
+            self.SEG_model_selected()
+        elif self.__class__.mode == 2:
+            self.CLS_mode_rb.setChecked(True)
+            self.CLS_model_selected()
         buttonBox = QtGui.QDialogButtonBox(parent=self)
         buttonBox.setOrientation(QtCore.Qt.Horizontal)
         buttonBox.setStandardButtons(
@@ -97,19 +102,23 @@ class SettingDialog(QtGui.QDialog):
         self.setLayout(main_v_layout)
 
     def CLS_model_selected(self):
+        self.__class__.mode = 2
         self.clsgroupBox.setDisabled(False)
         self.detgroupBox.setDisabled(True)
         self.seggroupBox.setDisabled(True)
 
     def DET_model_selected(self):
+        self.__class__.mode = 0
         self.detgroupBox.setDisabled(False)
         self.clsgroupBox.setDisabled(True)
         self.seggroupBox.setDisabled(True)
 
     def SEG_model_selected(self):
+        self.__class__.mode = 1
         self.seggroupBox.setDisabled(False)
         self.detgroupBox.setDisabled(True)
         self.clsgroupBox.setDisabled(True)
+
     def change_color_enable_state(self, state):
         if state == QtCore.Qt.Checked:
             self.__class__.enable_color_map = True
@@ -118,3 +127,14 @@ class SettingDialog(QtGui.QDialog):
 
     def get_color_map_state(self):
         return self.__class__.enable_color_map
+
+    def get_setting_state(self):
+        if self.__class__.mode == 0:
+            return {'mode': 0,'enable_color_map':self.__class__.enable_color_map}
+
+        elif self.__class__.mode == 1:
+            return {'mode': 1,'enable_color_map':self.__class__.enable_color_map}
+
+        elif self.__class__.mode == 2:
+            return {'mode': 2}
+
