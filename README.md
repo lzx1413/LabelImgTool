@@ -8,9 +8,21 @@ It is written in Python and uses Qt for its graphical interface.
 
 The annotation file will be saved as an XML file. The annotation format is PASCAL VOC format, and the format is the same as [ImageNet](http://www.image-net.org/)
 
-![](screenshot/bbox_label.png)
+task mode change
 
-![](screenshot/parse_label.png)
+![](screenshot/setting_panel.jpg)
+
+DET mode
+
+![](screenshot/bbox_label.jpg)
+
+SEG mode
+
+![](screenshot/parse_label.jpg)
+
+CLS mode
+
+![](screenshot/cls_task.jpg)
 
 ## Build source and use it
 

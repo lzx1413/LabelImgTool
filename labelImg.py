@@ -15,6 +15,8 @@ import qdarkstyle
 import requests
 from PyQt4.QtCore import *
 from PyQt4.QtGui import *
+from libs.constants import *
+from libs.ustr import ustr
 
 from libs import RemoteDialog
 from libs.canvas import Canvas
@@ -22,6 +24,7 @@ from libs.colorDialog import ColorDialog
 from libs.labelDialog import LabelDialog
 from libs.labelFile import LabelFile, LabelFileError
 from libs.lib import struct, newAction, newIcon, addActions, fmtShortcut
+from libs.appsettings import APPSettings
 from libs.pascal_voc_io import PascalVocReader
 from libs.shape import Shape, DEFAULT_LINE_COLOR, DEFAULT_FILL_COLOR
 from libs.toolBar import ToolBar
@@ -35,6 +38,13 @@ __appname__ = 'labelImgPlus'
 
 
 # Utility functions and classes.
+def have_qstring():
+    '''p3/qt5 get rid of QString wrapper as py3 has native unicode str type'''
+    return not (sys.version_info.major >= 3 or QT_VERSION_STR.startswith('5.'))
+
+
+def util_qt_strlistclass():
+    return QStringList if have_qstring() else list
 
 class WindowMixin(object):
 
@@ -62,7 +72,7 @@ class MainWindow(QMainWindow, WindowMixin):
         super(MainWindow, self).__init__()
         self.setWindowTitle(__appname__)
         # app mode 0=DET 1=SEG 2=CLS
-        self.mode = 0
+        self.task_mode = 0
         self.mode_str = ['DET','SEG','CLS']
 
         # shape type
@@ -91,7 +101,6 @@ class MainWindow(QMainWindow, WindowMixin):
         #cls labels
         self.currentItemLabels = []
         self.selectedLabel = None
-        self.clsLabelFile = 'Labels.txt'
 
         # Save as Pascal voc xml
         self.defaultSaveDir = None
@@ -173,7 +182,7 @@ class MainWindow(QMainWindow, WindowMixin):
         self.labelSelectDock = QDockWidget(u'Select Label', self)
         self.labelSelectDock.setObjectName(u'selectLabel')
         self.labelSelectDock.setWidget(self.labelListContainer)
-        if self.mode != 2:
+        if self.task_mode != 2:
             self.labelSelectDock.setEnabled(False)
         # label color map dock
         self.label_color_list.itemDoubleClicked.connect(
@@ -572,46 +581,47 @@ class MainWindow(QMainWindow, WindowMixin):
         self.zoom_level = 100
         self.fit_window = False
         self.remoteMode = False
+        self.app_settings = APPSettings()
+        self.app_settings.load()
+        settings = self.app_settings
 
-        # XXX: Could be completely declarative.
-        # Restore application settings.
-        types = {
-            'filename': QString,
-            'recentFiles': QStringList,
-            'window/size': QSize,
-            'window/position': QPoint,
-            'window/geometry': QByteArray,
-            # Docks and toolbars:
-            'window/state': QByteArray,
-            'savedir': QString,
-            'lastOpenDir': QString,
-            'mode':QString
-        }
-        self.settings = settings = Settings(types)
-        self.mode = int(settings.get('mode',0))
-        self.recentFiles = list(settings['recentFiles'])
-        size = settings.get('window/size', QSize(600, 500))
-        position = settings.get('window/position', QPoint(0, 0))
+        self.task_mode = int(settings.get(SETTING_TASK_MODE,0))
+        self.activeTaskMode()
+        ## Fix the compatible issue for qt4 and qt5. Convert the QStringList to python list
+        if settings.get(SETTING_RECENT_FILES):
+            if have_qstring():
+                recentFileQStringList = settings.get(SETTING_RECENT_FILES)
+                self.recentFiles = [ustr(i) for i in recentFileQStringList]
+            else:
+                self.recentFiles = recentFileQStringList = settings.get(SETTING_RECENT_FILES)
+
+        size = settings.get(SETTING_WIN_SIZE, QSize(600, 500))
+        position = settings.get(SETTING_WIN_POSE, QPoint(0, 0))
         self.resize(size)
         self.move(position)
-        saveDir = settings.get('savedir', None)
-        self.lastOpenDir = settings.get('lastOpenDir', None)
-        if os.path.exists(unicode(saveDir)):
-            self.defaultSaveDir = unicode(saveDir)
-            self.statusBar().showMessage(
-                '%s started. Annotation will be saved to %s' %
-                (__appname__, self.defaultSaveDir))
+        saveDir = ustr(settings.get(SETTING_SAVE_DIR, None))
+        self.lastOpenDir = ustr(settings.get(SETTING_LAST_OPEN_DIR, None))
+        if saveDir is not None and os.path.exists(saveDir):
+            self.defaultSaveDir = saveDir
+            self.statusBar().showMessage('%s started. Annotation will be saved to %s' %
+                                         (__appname__, self.defaultSaveDir))
             self.statusBar().show()
 
         # or simply:
-        # self.restoreGeometry(settings['window/geometry']
-        self.restoreState(settings['window/state'])
-        self.lineColor = QColor(settings.get('line/color', Shape.line_color))
-        self.fillColor = QColor(settings.get('fill/color', Shape.fill_color))
+        # self.restoreGeometry(settings[SETTING_WIN_GEOMETRY]
+        self.restoreState(settings.get(SETTING_WIN_STATE, QByteArray()))
+        self.lineColor = QColor(settings.get(SETTING_LINE_COLOR, Shape.line_color))
+        self.fillColor = QColor(settings.get(SETTING_FILL_COLOR, Shape.fill_color))
         Shape.line_color = self.lineColor
         Shape.fill_color = self.fillColor
+        # Add chris
 
-        if settings.get('advanced', QVariant()).toBool():
+        def xbool(x):
+            if isinstance(x, QVariant):
+                return x.toBool()
+            return bool(x)
+
+        if xbool(settings.get(SETTING_ADVANCE_MODE, False)):
             self.actions.advancedMode.setChecked(True)
             self.toggleAdvancedMode()
 
@@ -662,22 +672,25 @@ class MainWindow(QMainWindow, WindowMixin):
                     self.dirname = self.loadFilePath
                     self.openNextImg()
                     break
+    def activeTaskMode(self,setting_state = None):
+        if self.task_mode == 0 or self.task_mode == 1:
+            if not setting_state:
+                self.enable_color_map = setting_state['enable_color_map']
+            self.labelSelectDock.setEnabled(False)
+        elif self.task_mode == 2:
+            self.actions.delete.setEnabled(True)
+            self.labelSelectDock.setEnabled(True)
 
     def setSettings(self):
-        settings_dialog = SettingDialog(parent=self)
+        settings_dialog = SettingDialog(parent=self,task_mode=self.task_mode)
         if settings_dialog.exec_():
             self.enable_color_map = settings_dialog.get_color_map_state()
             setting_state = settings_dialog.get_setting_state()
-            if self.mode != setting_state['mode']:
+            if self.task_mode != setting_state['mode']:
                 self.resetState()
                 self.setClean()
-            self.mode = setting_state['mode']
-            if self.mode == 0 or self.mode == 1:
-                self.enable_color_map = setting_state['enable_color_map']
-                self.labelSelectDock.setEnabled(False)
-            if self.mode == 2:
-                self.actions.delete.setEnabled(True)
-                self.labelSelectDock.setEnabled(True)
+            self.task_mode = setting_state['mode']
+            self.activeTaskMode(setting_state)
             print 'change mode to',setting_state
         settings_dialog.destroy()
 
@@ -792,14 +805,14 @@ class MainWindow(QMainWindow, WindowMixin):
             z.setEnabled(value)
         for action in self.actions.onLoadActive:
             action.setEnabled(value)
-        print 'app mode',self.mode
-        if self.mode == 0:
+        print 'app mode',self.task_mode
+        if self.task_mode == 0:
             for action in self.actions.onDETActive:
                 action.setEnabled(value)
-        if self.mode == 1:
+        if self.task_mode == 1:
             for action in self.actions.onSEGActive:
                 action.setEnabled(value)
-        if self.mode == 0:
+        if self.task_mode == 0:
             for action in self.actions.onCLSActive:
                 action.setEnabled(value)
 
@@ -944,13 +957,13 @@ class MainWindow(QMainWindow, WindowMixin):
             action.setEnabled(True)
 
     def remLabel(self, shape = None,label = None):
-        if self.mode == 0 or self.mode == 1:
+        if self.task_mode == 0 or self.task_mode == 1:
             item = self.shapesToItems[shape]
             temp = self.labelList.takeItem(self.labelList.row(item))
             temp = None
             del self.shapesToItems[shape]
             del self.itemsToShapes[item]
-        elif self.mode == 2:
+        elif self.task_mode == 2:
             items = self.labelList.selectedItems()
             for item in items:
                 temp = self.labelList.takeItem(self.labelList.row(item))
@@ -962,7 +975,7 @@ class MainWindow(QMainWindow, WindowMixin):
 
     def loadLabels(self, shapes):
         s = []
-        if self.mode == 0 or self.mode == 1:
+        if self.task_mode == 0 or self.task_mode == 1:
             for label, points, line_color, fill_color, shape_type in shapes:
                 shape = Shape(label=label, shape_type=shape_type)
                 for x, y in points:
@@ -1000,7 +1013,7 @@ class MainWindow(QMainWindow, WindowMixin):
         shapes = [format_shape(shape) for shape in self.canvas.shapes]
         print 'shape type', self.shape_type
         imgFileName = os.path.basename(self.filename)
-        if self.mode == 1:#seg mode
+        if self.task_mode == 1:#seg mode
             with open(self.defaultSaveDir + 'label_num_dic.json', 'w') as label_num_file:
                 for key in self.label_num_dic:
                     print type(key)
@@ -1015,7 +1028,7 @@ class MainWindow(QMainWindow, WindowMixin):
                 self.image_size[1])
             mask_writer.save_mask_image(shapes)
         # Can add differrent annotation formats here
-        if self.mode == 0 or self.mode == 1:# seg and det mode
+        if self.task_mode == 0 or self.task_mode == 1:# seg and det mode
             try:
                 if self.usingPascalVocFormat is True:
                     savefilename = self.defaultSaveDir + imgFileName.split('.')[
@@ -1042,7 +1055,7 @@ class MainWindow(QMainWindow, WindowMixin):
                 self.errorMessage(u'Error saving label data',
                                   u'<b>%s</b>' % e)
                 return False
-        elif self.mode == 2:#cls mode
+        elif self.task_mode == 2:#cls mode
             savefilename = self.defaultSaveDir + imgFileName.split('.')[
                         0] + '.txt'  # the mask image will be save as file_mask.jpg etc.
             print savefilename
@@ -1060,11 +1073,11 @@ class MainWindow(QMainWindow, WindowMixin):
 
     def labelSelectionChanged(self):
         item = self.currentItem()
-        if self.mode == 0 or self.mode == 1:
+        if self.task_mode == 0 or self.task_mode == 1:
             if item and self.canvas.editing():
                 self._noSelectionSlot = True
                 self.canvas.selectShape(self.itemsToShapes[item])
-        elif self.mode == 2:
+        elif self.task_mode == 2:
             if item:
                 self.selectedLabel = self.itemsToShapes[item]
 
@@ -1174,7 +1187,7 @@ class MainWindow(QMainWindow, WindowMixin):
         self.resetState()
         self.canvas.setEnabled(False)
         if filename is None:
-            filename = self.settings['filename']
+            filename = self.app_settings[SETTING_FILENAME]
         filename = unicode(filename)
         if filename and self.fileListWidget.count() > 0:
             index = self.mImgList.index(filename)
@@ -1210,7 +1223,7 @@ class MainWindow(QMainWindow, WindowMixin):
             self.status("Loaded %s" % os.path.basename(unicode(filename)))
             self.setWindowTitle(
                 __appname__ +
-                ' ' +self.mode_str[self.mode]+' '+
+                ' ' + self.mode_str[self.task_mode] + ' ' +
                 os.path.basename(
                     unicode(filename)))
             self.image = image
@@ -1231,7 +1244,7 @@ class MainWindow(QMainWindow, WindowMixin):
 
             # Label xml file and show bound box according to its filename
             basename = os.path.basename(os.path.splitext(self.filename)[0])
-            if self.mode == 0 or self.mode == 1:
+            if self.task_mode == 0 or self.task_mode == 1:
                 if self.usingPascalVocFormat is True and \
                         self.defaultSaveDir is not None:
                     xmlPath = os.path.join(self.defaultSaveDir, basename + '.xml')
@@ -1240,7 +1253,7 @@ class MainWindow(QMainWindow, WindowMixin):
                         self.canvas.set_shape_type(1)
                     elif self.shape_type == 'RECT':
                         self.canvas.set_shape_type(0)
-            elif self.mode == 2:
+            elif self.task_mode == 2:
                 if self.defaultSaveDir is not None:
                     txtPath = os.path.join(self.defaultSaveDir, basename + '.txt')
                     self.loadCLSFile(txtPath)
@@ -1284,33 +1297,31 @@ class MainWindow(QMainWindow, WindowMixin):
     def closeEvent(self, event):
         if not self.mayContinue():
             event.ignore()
-        s = self.settings
-        s['mode'] = str(self.mode)
+        settings = self.app_settings
         # If it loads images from dir, don't load it at the begining
         if self.dirname is None:
-            s['filename'] = self.filename if self.filename else QString()
+            settings[SETTING_FILENAME] = self.filePath if self.filePath else ''
         else:
-            s['filename'] = ''
+            settings[SETTING_FILENAME] = ''
 
-        s['window/size'] = self.size()
-        s['window/position'] = self.pos()
-        s['window/state'] = self.saveState()
-        s['line/color'] = self.lineColor
-        s['fill/color'] = self.fillColor
-        s['recentFiles'] = self.recentFiles
-        s['advanced'] = not self._beginner
+        settings[SETTING_WIN_SIZE] = self.size()
+        settings[SETTING_TASK_MODE] = self.task_mode
+        settings[SETTING_WIN_POSE] = self.pos()
+        settings[SETTING_WIN_STATE] = self.saveState()
+        settings[SETTING_LINE_COLOR] = self.lineColor
+        settings[SETTING_FILL_COLOR] = self.fillColor
+        settings[SETTING_RECENT_FILES] = self.recentFiles
+        settings[SETTING_ADVANCE_MODE] = not self._beginner
         if self.defaultSaveDir is not None and len(self.defaultSaveDir) > 1:
-            s['savedir'] = str(self.defaultSaveDir)
+            settings[SETTING_SAVE_DIR] = ustr(self.defaultSaveDir)
         else:
-            s['savedir'] = ""
+            settings[SETTING_SAVE_DIR] = ""
 
         if self.lastOpenDir is not None and len(self.lastOpenDir) > 1:
-            s['lastOpenDir'] = str(self.lastOpenDir)
+            settings[SETTING_LAST_OPEN_DIR] = self.lastOpenDir
         else:
-            s['lastOpenDir'] = ""
-
-            # ask the use for where to save the labels
-            # s['window/geometry'] = self.saveGeometry()
+            settings[SETTING_LAST_OPEN_DIR] = ""
+        settings.save()
 
     ## User Dialogs ##
 
@@ -1510,10 +1521,10 @@ class MainWindow(QMainWindow, WindowMixin):
                                else self.saveFileDialog())
         else:
             imgFileName = os.path.basename(self.filename)
-            if self.mode == 0 or self.mode == 1:
+            if self.task_mode == 0 or self.task_mode == 1:
                 savedFileName = os.path.splitext(
                 imgFileName)[0] + LabelFile.suffix
-            elif self.mode == 2:
+            elif self.task_mode == 2:
                 savedFileName = os.path.splitext(
                 imgFileName)[0] + '.txt'
             savedPath = os.path.join(
@@ -1559,13 +1570,13 @@ class MainWindow(QMainWindow, WindowMixin):
 
     # Message Dialogs. #
     def hasLabels(self):
-        if self.mode == 0 or self.mode == 1:
+        if self.task_mode == 0 or self.task_mode == 1:
             if not self.itemsToShapes:
                 # self.errorMessage(u'No objects labeled',
                 # u'You must label at least one object to save the file.')
                 return False
             return True
-        elif self.mode == 2:
+        elif self.task_mode == 2:
             if not self.currentItemLabels:
                 return False
             return True

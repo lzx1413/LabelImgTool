@@ -1,6 +1,7 @@
 icons/.DS_Store
 database/
 *.pyc
+*.pkl
 .*.swp
 
 build/
