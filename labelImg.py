@@ -674,7 +674,7 @@ class MainWindow(QMainWindow, WindowMixin):
                     break
     def activeTaskMode(self,setting_state = None):
         if self.task_mode == 0 or self.task_mode == 1:
-            if not setting_state:
+            if  setting_state is not None:
                 self.enable_color_map = setting_state['enable_color_map']
             self.labelSelectDock.setEnabled(False)
         elif self.task_mode == 2:
@@ -1187,7 +1187,8 @@ class MainWindow(QMainWindow, WindowMixin):
         self.resetState()
         self.canvas.setEnabled(False)
         if filename is None:
-            filename = self.app_settings[SETTING_FILENAME]
+            if self.app_settings.get(SETTING_FILENAME):
+                filename = self.app_settings[SETTING_FILENAME]
         filename = unicode(filename)
         if filename and self.fileListWidget.count() > 0:
             index = self.mImgList.index(filename)
