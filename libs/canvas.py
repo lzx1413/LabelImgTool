@@ -195,9 +195,9 @@ class Canvas(QWidget):
             if self.drawing():
                 if self.shape_type == self.POLYGON_SHAPE and self.current:
                     self.current.addPoint(self.line[1])
+                    self.line[0] = self.current[-1]
                     if self.current.isClosed():
                         self.finalise()
-                    self.line[0] = self.current[-1]
                 elif self.shape_type == self.RECT_SHAPE and self.current and self.current.reachMaxPoints() is False:
                     initPos = self.current[0]
                     minX = initPos.x()
