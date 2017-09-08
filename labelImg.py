@@ -1020,7 +1020,7 @@ class MainWindow(QMainWindow, WindowMixin):
                 json.dump(self.label_num_dic, label_num_file)
             # the mask image will be save as file_mask.png etc.
             result_path = self.defaultSaveDir + \
-                imgFileName.replace('.', '_mask.').split('.')[0] + '.png'
+                os.path.splitext(imgFileName)[0] + '_mask.png'
             mask_writer = label_mask_writer(
                 self.label_num_dic,
                 result_path,
@@ -1031,8 +1031,8 @@ class MainWindow(QMainWindow, WindowMixin):
         if self.task_mode == 0 or self.task_mode == 1:# seg and det mode
             try:
                 if self.usingPascalVocFormat is True:
-                    savefilename = self.defaultSaveDir + imgFileName.split('.')[
-                        0] + '.xml'  # the mask image will be save as file_mask.jpg etc.
+                    
+                    savefilename = self.defaultSaveDir + os.path.splitext(imgFileName)[0] + '.xml'  # the mask image will be save as file_mask.jpg etc.
                     print 'savePascalVocFommat save to:' + savefilename
                     lf.savePascalVocFormat(
                         savefilename, self.image_size, shapes, unicode(
@@ -1056,8 +1056,7 @@ class MainWindow(QMainWindow, WindowMixin):
                                   u'<b>%s</b>' % e)
                 return False
         elif self.task_mode == 2:#cls mode
-            savefilename = self.defaultSaveDir + imgFileName.split('.')[
-                        0] + '.txt'  # the mask image will be save as file_mask.jpg etc.
+            savefilename = self.defaultSaveDir + os.path.splitext(imgFileName)[0] + '.txt' # the mask image will be save as file_mask.jpg etc.
             print savefilename
             with codecs.open(savefilename,'w','utf8') as outfile:
                 for item in self.currentItemLabels:
