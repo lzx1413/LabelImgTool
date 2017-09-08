@@ -874,7 +874,7 @@ class MainWindow(QMainWindow, WindowMixin):
             print 'Cancel creation.'
             self.canvas.setEditing(True)
             self.canvas.restoreCursor()
-            self.actions.create.setEnabled(True)
+            self.actions.createMode.setEnabled(True)
             self.actions.createpolygon.setEnabled(True)
 
     def toggleDrawMode(self, edit=True):

@@ -181,14 +181,14 @@ class Shape(object):
         self._highlightIndex = None
 
     def copy(self):
-        shape = Shape("Copy of %s" % self.label)
+        shape = Shape(self.label, self.shape_type, self.line_color)
         shape.points = [p for p in self.points]
         shape.fill = self.fill
         shape.selected = self.selected
         shape._closed = self._closed
-        if self.line_color != Shape.line_color:
+        if self.line_color != shape.line_color:
             shape.line_color = self.line_color
-        if self.fill_color != Shape.fill_color:
+        if self.fill_color != shape.fill_color:
             shape.fill_color = self.fill_color
         return shape
 
