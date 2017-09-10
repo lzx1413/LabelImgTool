@@ -1123,7 +1123,10 @@ class MainWindow(QMainWindow, WindowMixin):
             if self.beginner():  # Switch to edit mode.
                 self.canvas.setEditing(True)
                 self.actions.createMode.setEnabled(True)
-                self.actions.createpolygon.setEnabled(True)
+                if self.task_mode == 0:
+                    self.actions.createRect.setEnabled(True)
+                elif self.task_mode == 1:
+                    self.actions.createpolygon.setEnabled(True)
             else:
                 self.actions.editMode.setEnabled(True)
             self.setDirty()
