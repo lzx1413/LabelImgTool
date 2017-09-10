@@ -181,6 +181,8 @@ class MainWindow(QMainWindow, WindowMixin):
         self.labelListContainer.setLayout(LabellistLayout)
         self.labelSelectDock = QDockWidget(u'Select Label', self)
         self.labelSelectDock.setObjectName(u'selectLabel')
+        self.labelSelectDock.setFeatures(QDockWidget.DockWidgetFloatable |
+                 QDockWidget.DockWidgetMovable)
         self.labelSelectDock.setWidget(self.labelListContainer)
         if self.task_mode != 2:
             self.labelSelectDock.setEnabled(False)
