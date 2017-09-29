@@ -85,6 +85,7 @@ class MainWindow(QMainWindow, WindowMixin):
             SIGNAL("timeout()"),
             self.info_display)
         # label color map
+        self.label_font_size = 10
         self.label_color_map = []
         self.label_color_map_path = None
         self.has_defined_color_map = False
@@ -588,6 +589,7 @@ class MainWindow(QMainWindow, WindowMixin):
         settings = self.app_settings
 
         self.task_mode = int(settings.get(SETTING_TASK_MODE,0))
+        self.label_font_size = int(settings.get(SETTING_LABEL_FONT_SIZE,10))
         self.activeTaskMode()
         ## Fix the compatible issue for qt4 and qt5. Convert the QStringList to python list
         if settings.get(SETTING_RECENT_FILES):
@@ -684,7 +686,8 @@ class MainWindow(QMainWindow, WindowMixin):
             self.labelSelectDock.setEnabled(True)
 
     def setSettings(self):
-        settings_dialog = SettingDialog(parent=self,task_mode=self.task_mode)
+        config = {'task_mode':self.task_mode,'label_font_size':self.label_font_size}
+        settings_dialog = SettingDialog(parent=self,config = config)
         if settings_dialog.exec_():
             self.enable_color_map = settings_dialog.get_color_map_state()
             setting_state = settings_dialog.get_setting_state()
@@ -692,6 +695,11 @@ class MainWindow(QMainWindow, WindowMixin):
                 self.resetState()
                 self.setClean()
             self.task_mode = setting_state['mode']
+            if self.task_mode == 0:
+                self.label_font_size = setting_state['label_font_size']
+                Shape.label_font_size = self.label_font_size
+                if self.canvas:
+                    self.canvas.update()
             self.activeTaskMode(setting_state)
             print 'change mode to',setting_state
         settings_dialog.destroy()
@@ -1311,6 +1319,7 @@ class MainWindow(QMainWindow, WindowMixin):
 
         settings[SETTING_WIN_SIZE] = self.size()
         settings[SETTING_TASK_MODE] = self.task_mode
+        settings[SETTING_LABEL_FONT_SIZE] = self.label_font_size
         settings[SETTING_WIN_POSE] = self.pos()
         settings[SETTING_WIN_STATE] = self.saveState()
         settings[SETTING_LINE_COLOR] = self.lineColor

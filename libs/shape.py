@@ -30,6 +30,7 @@ class Shape(object):
     point_type = P_ROUND
     point_size = 8
     scale = 1.0
+    label_font_size = 10
 
     def __init__(self, label=None, shape_type=0, line_color=None):
         self.label = label
@@ -101,7 +102,7 @@ class Shape(object):
         # Try using integer sizes for smoother drawing(?)
         pen.setWidth(max(1, int(round(2.0 / self.scale))))
         painter.setPen(pen)
-        painter.setFont(QFont(painter.font().family(), 10, QFont.Bold))
+        painter.setFont(QFont(painter.font().family(), self.__class__.label_font_size, QFont.Bold))
 
         line_path = QPainterPath()
         vrtx_path = QPainterPath()
@@ -125,8 +126,7 @@ class Shape(object):
             painter.fillPath(line_path, color)
         if self.label is not None and self.shape_type == self.RECT_SHAPE:
             #painter.setBrush(QColor(255,255,255))
-            rec_width = abs(self.points[3].x()-self.points[0].x())
-            top_left_point = QPointF(self.points[0].x(),self.points[0].y()-13)
+            top_left_point = QPointF(self.points[0].x(),self.points[0].y()-int(self.__class__.label_font_size*1.15))
             label_bg = QRectF(top_left_point,self.points[3])
             painter.drawRect(label_bg)
             painter.drawText(self.points[0], self.label)

@@ -5,13 +5,15 @@ import re
 
 class SettingDialog(QtGui.QDialog):
     enable_color_map = False
+    label_font_size = 10
     task_mode = 0 #0=det, 1=seg, 2=cls
 
 
-    def __init__(self, parent,task_mode):
+    def __init__(self, parent,config):
         QtGui.QDialog.__init__(self, parent)
         self.resize(320, 240)
-        self.__class__.task_mode = task_mode
+        self.__class__.task_mode = config['task_mode']
+        self.__class__.label_font_size = config['label_font_size']
         self.init_UI()
     def createModeGroup(self):
         '''
@@ -39,8 +41,20 @@ class SettingDialog(QtGui.QDialog):
     def createDEToptGroup(self):
         self.detgroupBox = QtGui.QGroupBox("& DET options")
         self.enable_show_label_cb = QtGui.QCheckBox('enable show label name')
+        self.label_font_size_sl = QtGui.QSlider(QtCore.Qt.Horizontal)
+        self.label_font_size_sl.setRange(5,50)
+        self.label_font_size_sp = QtGui.QSpinBox()
+        self.label_font_size_sp.setRange(5,50)
+        QtCore.QObject.connect(self.label_font_size_sl, QtCore.SIGNAL("valueChanged(int)"),
+
+                               self.label_font_size_sp, QtCore.SLOT("setValue(int)"))
+        self.label_font_size_sl.valueChanged.connect(self.change_label_font_size)
+        self.label_font_size_sl.setValue(self.__class__.label_font_size)
         vbox = QtGui.QVBoxLayout()
         vbox.addWidget(self.enable_show_label_cb)
+        vbox.addWidget(QtGui.QLabel('label font size'))
+        vbox.addWidget(self.label_font_size_sl)
+        vbox.addWidget(self.label_font_size_sp)
         vbox.addStretch()
         self.detgroupBox.setLayout(vbox)
         return self.detgroupBox
@@ -125,13 +139,15 @@ class SettingDialog(QtGui.QDialog):
             self.__class__.enable_color_map = True
         else:
             self.__class__.enable_color_map = False
+    def change_label_font_size(self,value):
+        self.__class__.label_font_size = value
 
     def get_color_map_state(self):
         return self.__class__.enable_color_map
 
     def get_setting_state(self):
         if self.__class__.task_mode == 0:
-            return {'mode': 0,'enable_color_map':self.__class__.enable_color_map}
+            return {'mode': 0,'enable_color_map':self.__class__.enable_color_map,'label_font_size': self.__class__.label_font_size}
 
         elif self.__class__.task_mode == 1:
             return {'mode': 1,'enable_color_map':self.__class__.enable_color_map}
