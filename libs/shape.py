@@ -101,6 +101,7 @@ class Shape(object):
         # Try using integer sizes for smoother drawing(?)
         pen.setWidth(max(1, int(round(2.0 / self.scale))))
         painter.setPen(pen)
+        painter.setFont(QFont(painter.font().family(), 10, QFont.Bold))
 
         line_path = QPainterPath()
         vrtx_path = QPainterPath()
@@ -109,7 +110,7 @@ class Shape(object):
         # Uncommenting the following line will draw 2 paths
         # for the 1st vertex, and make it non-filled, which
         # may be desirable.
-        #self.drawVertex(vrtx_path, 0)
+        self.drawVertex(vrtx_path, 0)
 
         for i, p in enumerate(self.points):
             line_path.lineTo(p)
@@ -123,13 +124,12 @@ class Shape(object):
             color = self.select_fill_color if self.selected else self.fill_color
             painter.fillPath(line_path, color)
         if self.label is not None and self.shape_type == self.RECT_SHAPE:
-            '''
-            painter.setBrush(QColor(255,255,255))
-            top_left_point = QPointF(self.points[0].x(),self.points[0].y()-50)
+            #painter.setBrush(QColor(255,255,255))
+            rec_width = abs(self.points[3].x()-self.points[0].x())
+            top_left_point = QPointF(self.points[0].x(),self.points[0].y()-13)
             label_bg = QRectF(top_left_point,self.points[3])
             painter.drawRect(label_bg)
-            '''
-            #painter.drawText(self.points[0], self.label)
+            painter.drawText(self.points[0], self.label)
 
     def drawVertex(self, path, i):
         d = self.point_size / self.scale
