@@ -89,7 +89,7 @@ class MainWindow(QMainWindow, WindowMixin):
         self.label_color_map = []
         self.label_color_map_path = None
         self.has_defined_color_map = False
-        self.enable_color_map = False
+        self.enable_color_map = True
         # online database
         self.database_url = None
         self.connect_remote_db = None
@@ -201,8 +201,10 @@ class MainWindow(QMainWindow, WindowMixin):
         self.label_color_dock.setWidget(self.label_color_container)
 
         #load predefined files
-        self.loadPredefinedDETClasses()
-        self.loadPredefinedCLSClasses()
+        if self.task_mode in [0,1]:
+            self.loadPredefinedDETClasses()
+        if self.task_mode == 2:
+            self.loadPredefinedCLSClasses()
         self.zoomWidget = ZoomWidget()
         self.colorDialog = ColorDialog(parent=self)
 
@@ -991,9 +993,10 @@ class MainWindow(QMainWindow, WindowMixin):
                 for x, y in points:
                     shape.addPoint(QPointF(x, y))
                 shape.close()
+                if label not in self.labelHist:
+                    self.labelHist.append(label)
                 if self.enable_color_map:
-                    if label in self.labelHist:
-                        shape.fill_color = self.label_color_map[
+                    shape.fill_color = self.label_color_map[
                             self.label_num_dic[label]]
                 s.append(shape)
                 self.addLabel(shape)
