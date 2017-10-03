@@ -33,14 +33,14 @@ In order to build the resource and assets, you need to install pyqt4-dev-tools:
 * Ubuntu
 
 `sudo apt-get install pyqt4-dev-tools`
+* Mac
+   install pyqt4 with [instructions](https://robonobodojo.wordpress.com/2017/02/08/installing-pyqt4-on-mac-osx/)
 
 `sudo apt-get install python-opencv`
 
 `pip install lxml`
 
 `pip install qdarkstyle`
-
-`make all`
 
 `./labelImg.py`
 
