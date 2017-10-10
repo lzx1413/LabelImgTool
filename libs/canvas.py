@@ -432,15 +432,17 @@ class Canvas(QWidget):
         p.drawImage(0, 0, self.bg_image)
         #print self.brush_point.x(),self.brush_point.y()
         if self.task_mode == 3:
-            p.setOpacity(0.3)
+            #p.setOpacity(0.3)
             p.drawImage(0,0,self.mask_pixmap)
             if self.brush_point:
                 p.drawEllipse(self.brush_point,self.brush_size/2,self.brush_size/2)
             if self.current_brush_path:
+                if self.mask_pixmap.isNull():
+                    self.mask_pixmap = QImage(self.bg_image.size(), QImage.Format_ARGB32)
+                    self.mask_pixmap.fill(QColor(255,255,255,0))
                 self.brush.begin(self.mask_pixmap)
                 brush_pen = QPen()
-                if self.erase_mode:
-                    self.brush.setCompositionMode(QPainter.CompositionMode_Source)
+                self.brush.setCompositionMode(QPainter.CompositionMode_Source)
                 brush_pen.setColor(self.brush_color)
                 brush_pen.setWidth(self.brush_size)
                 brush_pen.setCapStyle(Qt.RoundCap)
@@ -448,8 +450,6 @@ class Canvas(QWidget):
                 self.brush.setPen(brush_pen)
                 self.brush.drawPath(self.current_brush_path)
                 self.brush.end()
-                self.mask_pixmap.save("tmp.jpg")
-                #p.drawPixmap(0,0,QPixmap.fromImage(self.mask_pixmap))
         Shape.scale = self.scale
         for shape in self.shapes:
             if shape.fill_color:
@@ -622,9 +622,8 @@ class Canvas(QWidget):
     def loadPixmap(self, pixmap):
         self.bg_image = pixmap
         self.shapes = []
-        if self.task_mode == 3:
-            self.mask_pixmap = QImage(self.bg_image.size(), QImage.Format_ARGB32)
-            self.mask_pixmap.fill(QColor(0,0,0,128))
+        self.mask_pixmap = QImage(self.bg_image.size(), QImage.Format_ARGB32)
+        self.mask_pixmap.fill(QColor(255,255,255,0))
         self.repaint()
 
     def loadShapes(self, shapes):

@@ -182,6 +182,7 @@ class MainWindow(QMainWindow, WindowMixin):
         self.brush_size_sl.setValue(10)
         self.brush_size_sp = QSpinBox()
         self.brush_size_sp.setRange(1,20)
+        self.brush_size_sp.setValue(10)
         self.brush_size_sl.valueChanged.connect(self.brush_size_sp.setValue)
         self.brush_size_sl.valueChanged.connect(self.set_brush_size)
         brush_layout.addWidget(QLabel('brush size'))
@@ -1032,22 +1033,25 @@ class MainWindow(QMainWindow, WindowMixin):
         if self.task_mode in [0,1]:
             for label, points, line_color, fill_color, shape_type in shapes:
                 shape = Shape(label=label, shape_type=shape_type)
-                for x, y in points:
-                    shape.addPoint(QPointF(x, y))
-                shape.close()
-                if label not in self.labelHist:
-                    self.labelHist.append(label)
-                if self.enable_color_map:
-                    shape.fill_color = self.label_color_map[
-                            self.label_num_dic[label]]
-                s.append(shape)
-                self.addLabel(shape)
-                if not self.enable_color_map:
-                    if line_color:
-                        shape.line_color = QColor(*line_color)
-                    if fill_color:
-                        shape.fill_color = QColor(*fill_color)
-            self.canvas.loadShapes(s)
+                assert isinstance(shape_type, int)
+                if self.task_mode == 0 and shape_type == 0 or self.task_mode == 1 and shape_type == 1:
+                    for x, y in points:
+                        shape.addPoint(QPointF(x, y))
+                    shape.close()
+                    if label not in self.labelHist:
+                        self.labelHist.append(label)
+                    if self.enable_color_map:
+                        shape.fill_color = self.label_color_map[
+                                self.label_num_dic[label]]
+                    s.append(shape)
+                    self.addLabel(shape)
+                    if not self.enable_color_map:
+                        if line_color:
+                            shape.line_color = QColor(*line_color)
+                        if fill_color:
+                            shape.fill_color = QColor(*fill_color)
+                if s:
+                    self.canvas.loadShapes(s)
 
 
 
@@ -1176,8 +1180,9 @@ class MainWindow(QMainWindow, WindowMixin):
                 self.label_fre_dic[str(text)] = 1
             new_shape = self.canvas.setLastLabel(text)
             if self.enable_color_map:
-                new_shape.fill_color = self.label_color_map[
+                fill_color = self.label_color_map[
                     self.label_num_dic[text]]
+                new_shape.fill_color = QColor(fill_color[0],fill_color[1],fill_color[2],fill_color[3])
             self.addLabel(self.canvas.setLastLabel(text))
             if self.beginner():  # Switch to edit mode.
                 self.canvas.setEditing(True)
@@ -1743,14 +1748,16 @@ class MainWindow(QMainWindow, WindowMixin):
                     # RGBA
                     if len(line) == 4:
                         self.label_color_map.append(
-                            QColor(line[0], line[1], line[2], line[3]))
+                            [line[0], line[1], line[2], line[3]])
                     elif len(line) == 3:
                         self.label_color_map.append(
-                            QColor(line[0], line[1], line[2], 128))
+                            [line[0], line[1], line[2], 128])
                     else:
                         print('the num of color is wrong')
                 self.has_defined_color_map = True
-                print(self.label_color_map)
+        else:
+            self.label_color_map = [color+[128] for color in COLORMAP.values()]
+            print(self.label_color_map)
     def loadPredefinedCLSClasses(self):
         self.labelHist = []
         predefined_classes_path = os.path.join(

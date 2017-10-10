@@ -4,7 +4,7 @@ import re
 
 
 class SettingDialog(QtGui.QDialog):
-    enable_color_map = False
+    enable_color_map = True
     label_font_size = 10
     task_mode = 0 #0=det, 1=seg, 2=cls
 
