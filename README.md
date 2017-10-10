@@ -24,6 +24,10 @@ CLS mode
 
 ![](screenshot/cls_task.jpg)
 
+Brush SEG mode(in development: brush branch)
+
+![](screenshot/brush_task.jpg)
+
 ## Build source and use it
 
 Requires at least [Python 2.6](http://www.python.org/getit/) and has been tested with [PyQt4.8](http://www.riverbankcomputing.co.uk/software/pyqt/intro).
