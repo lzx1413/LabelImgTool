@@ -432,7 +432,7 @@ class Canvas(QWidget):
         p.drawImage(0, 0, self.bg_image)
         #print self.brush_point.x(),self.brush_point.y()
         if self.task_mode == 3:
-            #p.setOpacity(0.3)
+            p.setOpacity(0.3)
             p.drawImage(0,0,self.mask_pixmap)
             if self.brush_point:
                 p.drawEllipse(self.brush_point,self.brush_size/2,self.brush_size/2)

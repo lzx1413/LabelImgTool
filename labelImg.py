@@ -178,10 +178,10 @@ class MainWindow(QMainWindow, WindowMixin):
         self.brush_widget.setLayout(brush_layout)
 
         self.brush_size_sl = QSlider(Qt.Horizontal)
-        self.brush_size_sl.setRange(1,20)
+        self.brush_size_sl.setRange(1,100)
         self.brush_size_sl.setValue(10)
         self.brush_size_sp = QSpinBox()
-        self.brush_size_sp.setRange(1,20)
+        self.brush_size_sp.setRange(1,100)
         self.brush_size_sp.setValue(10)
         self.brush_size_sl.valueChanged.connect(self.brush_size_sp.setValue)
         self.brush_size_sl.valueChanged.connect(self.set_brush_size)
@@ -693,9 +693,9 @@ class MainWindow(QMainWindow, WindowMixin):
             self.canvas.erase_mode = True
         else:
             self.canvas.erase_mode = False
-            self.canvas.brush_color = QColor(255,0,0,255)
+            self.canvas.brush_color = QColor(255,255,255,0)
     def set_brush_clear(self):
-        self.canvas.mask_pixmap.fill(QColor(0,0,0,128))
+        self.canvas.mask_pixmap.fill(QColor(255,255,255,0))
 
     def createPolygon(self):
         self.shape_type = 'POLYGON'
@@ -1040,6 +1040,7 @@ class MainWindow(QMainWindow, WindowMixin):
                     shape.close()
                     if label not in self.labelHist:
                         self.labelHist.append(label)
+                        self.label_num_dic[label] = len(self.label_num_dic)
                     if self.enable_color_map:
                         shape.fill_color = self.label_color_map[
                                 self.label_num_dic[label]]
