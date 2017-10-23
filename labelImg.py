@@ -1060,6 +1060,8 @@ class MainWindow(QMainWindow, WindowMixin):
         lf = LabelFile()
 
         def format_shape(s):
+            if isinstance(s.fill_color,list):
+                s.fill_color = QColor(s.fill_color[0],s.fill_color[1],s.fill_color[2],s.fill_color[3])
             return dict(
                 label=unicode(
                     s.label),
