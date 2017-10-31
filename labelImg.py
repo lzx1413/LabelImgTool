@@ -693,7 +693,7 @@ class MainWindow(QMainWindow, WindowMixin):
             self.canvas.erase_mode = True
         else:
             self.canvas.erase_mode = False
-            self.canvas.brush_color = QColor(255,255,255,0)
+            self.canvas.brush_color = QColor(255,0,0,255)
     def set_brush_clear(self):
         self.canvas.mask_pixmap.fill(QColor(255,255,255,0))
 
@@ -1754,12 +1754,12 @@ class MainWindow(QMainWindow, WindowMixin):
                             [line[0], line[1], line[2], line[3]])
                     elif len(line) == 3:
                         self.label_color_map.append(
-                            [line[0], line[1], line[2], 128])
+                            [line[0], line[1], line[2], 50])
                     else:
                         print('the num of color is wrong')
                 self.has_defined_color_map = True
         else:
-            self.label_color_map = [color+[128] for color in COLORMAP.values()]
+            self.label_color_map = [color+[50] for color in COLORMAP.values()]
             print(self.label_color_map)
     def loadPredefinedCLSClasses(self):
         self.labelHist = []
