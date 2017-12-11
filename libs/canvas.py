@@ -31,6 +31,14 @@ class Canvas(QWidget):
         super(Canvas, self).__init__(*args, **kwargs)
         # Initialise local state.
         self.shape_type = self.POLYGON_SHAPE
+        self.brush_point = None
+        self.task_mode = 3
+        self.erase_mode = False
+        self.current_brush_path = None
+        self.mask_Image = None
+        self.brush_color =QColor(255,0,0,255)
+        self.brush_size = 10
+        self.brush = QPainter();
         self.mode = self.EDIT
         self.shapes = []
         self.current = None
@@ -41,13 +49,13 @@ class Canvas(QWidget):
         self.prevPoint = QPointF()
         self.offsets = QPointF(), QPointF()
         self.scale = 1.0
-        self.pixmap = QPixmap()
+        self.bg_image = QImage()
         self.visible = {}
         self._hideBackround = False
         self.hideBackround = False
         self.hShape = None
         self.hVertex = None
-        self._painter = QPainter()
+        self._painter = QPainter(self)
         self.font_size = 50
         self._cursor = CURSOR_DEFAULT
         # Menus:
@@ -71,6 +79,8 @@ class Canvas(QWidget):
 
     def enterEvent(self, ev):
         self.overrideCursor(self._cursor)
+    def get_mask_image(self):
+        return self.mask_pixmap
 
     def leaveEvent(self, ev):
         self.restoreCursor()
@@ -104,8 +114,21 @@ class Canvas(QWidget):
     def mouseMoveEvent(self, ev):
         """Update line with last point and current coordinates."""
         pos = self.transformPos(ev.posF())
-
         self.restoreCursor()
+        if self.task_mode == 3:
+            self.brush_point = pos
+
+            if Qt.LeftButton & ev.buttons():
+                if self.outOfPixmap(pos):
+                    return
+                if not self.current_brush_path:
+                    self.current_brush_path = QPainterPath()
+                    self.current_brush_path.moveTo(pos)
+                else:
+                    self.current_brush_path.lineTo(pos)
+            self.repaint()
+            return
+
 
         # Polygon drawing.
         if self.drawing():
@@ -239,6 +262,8 @@ class Canvas(QWidget):
                 self.repaint()
         elif ev.button() == Qt.LeftButton and self.selectedShape:
             self.overrideCursor(CURSOR_GRAB)
+        elif ev.button() == Qt.LeftButton and self.task_mode == 3 and self.current_brush_path:
+            self.current_brush_path = None
 
     def endMove(self, copy=False):
         assert self.selectedShape and self.selectedShapeCopy
@@ -340,8 +365,8 @@ class Canvas(QWidget):
             pos -= QPointF(min(0, o1.x()), min(0, o1.y()))
         o2 = pos + self.offsets[1]
         if self.outOfPixmap(o2):
-            pos += QPointF(min(0, self.pixmap.width() - o2.x()),
-                           min(0, self.pixmap.height() - o2.y()))
+            pos += QPointF(min(0, self.bg_image.width() - o2.x()),
+                           min(0, self.bg_image.height() - o2.y()))
         # The next line tracks the new position of the cursor
         # relative to the shape, but also results in making it
         # a bit "shaky" when nearing the border and allows it to
@@ -391,7 +416,7 @@ class Canvas(QWidget):
             self.boundedMoveShape(shape, point + offset)
 
     def paintEvent(self, event):
-        if not self.pixmap:
+        if not self.bg_image:
             return super(Canvas, self).paintEvent(event)
 
         p = self._painter
@@ -404,7 +429,27 @@ class Canvas(QWidget):
         p.scale(self.scale, self.scale)
         p.translate(self.offsetToCenter())
 
-        p.drawPixmap(0, 0, self.pixmap)
+        p.drawImage(0, 0, self.bg_image)
+        #print self.brush_point.x(),self.brush_point.y()
+        if self.task_mode == 3:
+            p.setOpacity(0.3)
+            p.drawImage(0,0,self.mask_pixmap)
+            if self.brush_point:
+                p.drawEllipse(self.brush_point,self.brush_size/2,self.brush_size/2)
+            if self.current_brush_path:
+                if self.mask_pixmap.isNull():
+                    self.mask_pixmap = QImage(self.bg_image.size(), QImage.Format_ARGB32)
+                    self.mask_pixmap.fill(QColor(255,255,255,0))
+                self.brush.begin(self.mask_pixmap)
+                brush_pen = QPen()
+                self.brush.setCompositionMode(QPainter.CompositionMode_Source)
+                brush_pen.setColor(self.brush_color)
+                brush_pen.setWidth(self.brush_size)
+                brush_pen.setCapStyle(Qt.RoundCap)
+                brush_pen.setJoinStyle(Qt.RoundJoin)
+                self.brush.setPen(brush_pen)
+                self.brush.drawPath(self.current_brush_path)
+                self.brush.end()
         Shape.scale = self.scale
         for shape in self.shapes:
             if shape.fill_color:
@@ -440,14 +485,17 @@ class Canvas(QWidget):
     def offsetToCenter(self):
         s = self.scale
         area = super(Canvas, self).size()
-        w, h = self.pixmap.width() * s, self.pixmap.height() * s
+        if self.bg_image:
+            w, h = self.bg_image.width() * s, self.bg_image.height() * s
+        else:
+            w,h = 100,100
         aw, ah = area.width(), area.height()
         x = (aw - w) / (2 * s) if aw > w else 0
         y = (ah - h) / (2 * s) if ah > h else 0
         return QPointF(x, y)
 
     def outOfPixmap(self, p):
-        w, h = self.pixmap.width(), self.pixmap.height()
+        w, h = self.bg_image.width(), self.bg_image.height()
         return not (0 <= p.x() <= w and 0 <= p.y() <= h)
 
     def finalise(self):
@@ -469,7 +517,7 @@ class Canvas(QWidget):
         # Cycle through each image edge in clockwise fashion,
         # and find the one intersecting the current line segment.
         # http://paulbourke.net/geometry/lineline2d/
-        size = self.pixmap.size()
+        size = self.bg_image.size()
         points = [(0, 0),
                   (size.width(), 0),
                   (size.width(), size.height()),
@@ -519,8 +567,8 @@ class Canvas(QWidget):
         return self.minimumSizeHint()
 
     def minimumSizeHint(self):
-        if self.pixmap:
-            return self.scale * self.pixmap.size()
+        if self.bg_image:
+            return self.scale * self.bg_image.size()
         return super(Canvas, self).minimumSizeHint()
 
     def wheelEvent(self, ev):
@@ -568,9 +616,14 @@ class Canvas(QWidget):
         self.drawingPolygon.emit(False)
         self.update()
 
+    def loadMaskmap(self,mask):
+        self.mask_pixmap = mask
+        self.repaint()
     def loadPixmap(self, pixmap):
-        self.pixmap = pixmap
+        self.bg_image = pixmap
         self.shapes = []
+        self.mask_pixmap = QImage(self.bg_image.size(), QImage.Format_ARGB32)
+        self.mask_pixmap.fill(QColor(255,255,255,0))
         self.repaint()
 
     def loadShapes(self, shapes):
@@ -594,5 +647,5 @@ class Canvas(QWidget):
 
     def resetState(self):
         self.restoreCursor()
-        self.pixmap = None
+        self.bg_image = None
         self.update()

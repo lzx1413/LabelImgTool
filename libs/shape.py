@@ -123,6 +123,8 @@ class Shape(object):
         painter.fillPath(vrtx_path, self.vertex_fill_color)
         if self.fill:
             color = self.select_fill_color if self.selected else self.fill_color
+            if isinstance(color,list):
+                color=QColor(*color)
             painter.fillPath(line_path, color)
         if self.label is not None and self.shape_type == self.RECT_SHAPE:
             #painter.setBrush(QColor(255,255,255))

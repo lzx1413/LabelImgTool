@@ -73,7 +73,7 @@ class MainWindow(QMainWindow, WindowMixin):
         self.setWindowTitle(__appname__)
         # app mode 0=DET 1=SEG 2=CLS
         self.task_mode = 0
-        self.mode_str = ['DET','SEG','CLS']
+        self.mode_str = ['DET','SEG','CLS','BRU']
 
         # shape type
         self.shape_type = 'RECT'
@@ -171,6 +171,33 @@ class MainWindow(QMainWindow, WindowMixin):
         self.filedock.setObjectName(u'Files')
         self.filedock.setWidget(self.fileListContainer)
 
+        # brush tools
+        self.brush_widget = QWidget()
+        brush_layout = QVBoxLayout()
+        brush_layout.setContentsMargins(0,0,0,0)
+        self.brush_widget.setLayout(brush_layout)
+
+        self.brush_size_sl = QSlider(Qt.Horizontal)
+        self.brush_size_sl.setRange(1,100)
+        self.brush_size_sl.setValue(10)
+        self.brush_size_sp = QSpinBox()
+        self.brush_size_sp.setRange(1,100)
+        self.brush_size_sp.setValue(10)
+        self.brush_size_sl.valueChanged.connect(self.brush_size_sp.setValue)
+        self.brush_size_sl.valueChanged.connect(self.set_brush_size)
+        brush_layout.addWidget(QLabel('brush size'))
+        brush_layout.addWidget(self.brush_size_sl)
+        brush_layout.addWidget(self.brush_size_sp)
+        self.brush_eraser = QCheckBox(u'Brush Eraser')
+        self.brush_eraser.stateChanged.connect(self.set_brush_eraser)
+        brush_layout.addWidget(self.brush_eraser)
+        self.brush_clear = QPushButton(u'Brush Clear')
+        self.brush_clear.clicked.connect(self.set_brush_clear)
+        brush_layout.addWidget(self.brush_clear)
+        self.brush_dock = QDockWidget(u'Brush Tools',self)
+        self.brush_dock.setObjectName(u'Brush')
+        self.brush_dock.setWidget(self.brush_widget)
+
         # select a label
         self.labelListWidget = QListWidget()
         self.labelListWidget.itemDoubleClicked.connect(
@@ -203,7 +230,7 @@ class MainWindow(QMainWindow, WindowMixin):
         #load predefined files
         if self.task_mode in [0,1]:
             self.loadPredefinedDETClasses()
-        if self.task_mode == 2:
+        if self.task_mode in [2,3]:
             self.loadPredefinedCLSClasses()
         self.zoomWidget = ZoomWidget()
         self.colorDialog = ColorDialog(parent=self)
@@ -231,6 +258,8 @@ class MainWindow(QMainWindow, WindowMixin):
         self.addDockWidget(Qt.RightDockWidgetArea, self.label_color_dock)
         # add file list and dock to move faster
         self.addDockWidget(Qt.RightDockWidgetArea, self.filedock)
+        #add brush tool
+        self.addDockWidget(Qt.RightDockWidgetArea,self.brush_dock)
         # select label
         self.addDockWidget(Qt.RightDockWidgetArea, self.labelSelectDock)
         self.dockFeatures = QDockWidget.DockWidgetClosable \
@@ -591,6 +620,7 @@ class MainWindow(QMainWindow, WindowMixin):
         settings = self.app_settings
 
         self.task_mode = int(settings.get(SETTING_TASK_MODE,0))
+        self.canvas.task_mode = self.task_mode
         self.label_font_size = int(settings.get(SETTING_LABEL_FONT_SIZE,10))
         self.activeTaskMode()
         ## Fix the compatible issue for qt4 and qt5. Convert the QStringList to python list
@@ -655,6 +685,18 @@ class MainWindow(QMainWindow, WindowMixin):
         self.info_txt.setText(info)
 
     ## Support Functions ##
+    def set_brush_size(self,brush_size):
+        self.canvas.brush_size = brush_size
+    def set_brush_eraser(self,value):
+        if value == Qt.Checked:
+            self.canvas.brush_color = QColor(0,0,0,10)
+            self.canvas.erase_mode = True
+        else:
+            self.canvas.erase_mode = False
+            self.canvas.brush_color = QColor(255,0,0,255)
+    def set_brush_clear(self):
+        self.canvas.mask_pixmap.fill(QColor(255,255,255,0))
+
     def createPolygon(self):
         self.shape_type = 'POLYGON'
         self.canvas.set_shape_type(1)
@@ -679,11 +721,11 @@ class MainWindow(QMainWindow, WindowMixin):
                     self.openNextImg()
                     break
     def activeTaskMode(self,setting_state = None):
-        if self.task_mode == 0 or self.task_mode == 1:
+        if self.task_mode in [0,1]:
             if  setting_state is not None:
                 self.enable_color_map = setting_state['enable_color_map']
             self.labelSelectDock.setEnabled(False)
-        elif self.task_mode == 2:
+        elif self.task_mode in [2,3]:
             self.actions.delete.setEnabled(True)
             self.labelSelectDock.setEnabled(True)
 
@@ -697,6 +739,7 @@ class MainWindow(QMainWindow, WindowMixin):
                 self.resetState()
                 self.setClean()
             self.task_mode = setting_state['mode']
+            self.canvas.task_mode = self.task_mode
             if self.task_mode == 0:
                 self.label_font_size = setting_state['label_font_size']
                 Shape.label_font_size = self.label_font_size
@@ -969,7 +1012,7 @@ class MainWindow(QMainWindow, WindowMixin):
             action.setEnabled(True)
 
     def remLabel(self, shape = None,label = None):
-        if self.task_mode == 0 or self.task_mode == 1:
+        if self.task_mode in [0,1]:
             item = self.shapesToItems[shape]
             temp = self.labelList.takeItem(self.labelList.row(item))
             temp = None
@@ -987,25 +1030,29 @@ class MainWindow(QMainWindow, WindowMixin):
 
     def loadLabels(self, shapes):
         s = []
-        if self.task_mode == 0 or self.task_mode == 1:
+        if self.task_mode in [0,1]:
             for label, points, line_color, fill_color, shape_type in shapes:
                 shape = Shape(label=label, shape_type=shape_type)
-                for x, y in points:
-                    shape.addPoint(QPointF(x, y))
-                shape.close()
-                if label not in self.labelHist:
-                    self.labelHist.append(label)
-                if self.enable_color_map:
-                    shape.fill_color = self.label_color_map[
-                            self.label_num_dic[label]]
-                s.append(shape)
-                self.addLabel(shape)
-                if not self.enable_color_map:
-                    if line_color:
-                        shape.line_color = QColor(*line_color)
-                    if fill_color:
-                        shape.fill_color = QColor(*fill_color)
-            self.canvas.loadShapes(s)
+                assert isinstance(shape_type, int)
+                if self.task_mode == 0 and shape_type == 0 or self.task_mode == 1 and shape_type == 1:
+                    for x, y in points:
+                        shape.addPoint(QPointF(x, y))
+                    shape.close()
+                    if label not in self.labelHist:
+                        self.labelHist.append(label)
+                        self.label_num_dic[label] = len(self.label_num_dic)
+                    if self.enable_color_map:
+                        shape.fill_color = self.label_color_map[
+                                self.label_num_dic[label]]
+                    s.append(shape)
+                    self.addLabel(shape)
+                    if not self.enable_color_map:
+                        if line_color:
+                            shape.line_color = QColor(*line_color)
+                        if fill_color:
+                            shape.fill_color = QColor(*fill_color)
+                if s:
+                    self.canvas.loadShapes(s)
 
 
 
@@ -1013,6 +1060,8 @@ class MainWindow(QMainWindow, WindowMixin):
         lf = LabelFile()
 
         def format_shape(s):
+            if isinstance(s.fill_color,list):
+                s.fill_color = QColor(s.fill_color[0],s.fill_color[1],s.fill_color[2],s.fill_color[3])
             return dict(
                 label=unicode(
                     s.label),
@@ -1041,7 +1090,7 @@ class MainWindow(QMainWindow, WindowMixin):
                 self.image_size[1])
             mask_writer.save_mask_image(shapes)
         # Can add differrent annotation formats here
-        if self.task_mode == 0 or self.task_mode == 1:# seg and det mode
+        if self.task_mode in [0,1]:# seg and det mode
             try:
                 if self.usingPascalVocFormat is True:
                     
@@ -1074,6 +1123,12 @@ class MainWindow(QMainWindow, WindowMixin):
             with codecs.open(savefilename,'w','utf8') as outfile:
                 for item in self.currentItemLabels:
                     outfile.write(item+'\n')
+        elif self.task_mode == 3:#brush mode
+            savefilename = self.defaultSaveDir + os.path.splitext(imgFileName)[0] + '.png' # the mask image will be save as file_mask.jpg etc.
+            mask_img = self.canvas.get_mask_image()
+            if mask_img:
+                mask_img.save(savefilename)
+
 
 
 
@@ -1085,7 +1140,7 @@ class MainWindow(QMainWindow, WindowMixin):
 
     def labelSelectionChanged(self):
         item = self.currentItem()
-        if self.task_mode == 0 or self.task_mode == 1:
+        if self.task_mode in [0,1]:
             if item and self.canvas.editing():
                 self._noSelectionSlot = True
                 self.canvas.selectShape(self.itemsToShapes[item])
@@ -1128,8 +1183,9 @@ class MainWindow(QMainWindow, WindowMixin):
                 self.label_fre_dic[str(text)] = 1
             new_shape = self.canvas.setLastLabel(text)
             if self.enable_color_map:
-                new_shape.fill_color = self.label_color_map[
+                fill_color = self.label_color_map[
                     self.label_num_dic[text]]
+                new_shape.fill_color = QColor(fill_color[0],fill_color[1],fill_color[2],fill_color[3])
             self.addLabel(self.canvas.setLastLabel(text))
             if self.beginner():  # Switch to edit mode.
                 self.canvas.setEditing(True)
@@ -1196,6 +1252,9 @@ class MainWindow(QMainWindow, WindowMixin):
                 for line in lines:
                     label = line.strip()
                     self.addCLSLabel(label)
+    def loadBRUFile(self,filepath):
+        mask_img = QImage(filepath)
+        self.canvas.loadMaskmap(mask_img)
 
     def loadFile(self, filename=None):
         """Load the specified file, or the last opened file if None."""
@@ -1248,7 +1307,7 @@ class MainWindow(QMainWindow, WindowMixin):
             self.image_size.append(image.width())
             self.image_size.append( 1 if image.isGrayscale() else 3)
             self.filename = filename
-            self.canvas.loadPixmap(QPixmap.fromImage(image))
+            self.canvas.loadPixmap(image)
             if self.labelFile:
                 self.loadLabels(self.labelFile.shapes)
             self.setClean()
@@ -1260,7 +1319,7 @@ class MainWindow(QMainWindow, WindowMixin):
 
             # Label xml file and show bound box according to its filename
             basename = os.path.basename(os.path.splitext(self.filename)[0])
-            if self.task_mode == 0 or self.task_mode == 1:
+            if self.task_mode in [0,1]:
                 if self.usingPascalVocFormat is True and \
                         self.defaultSaveDir is not None:
                     xmlPath = os.path.join(self.defaultSaveDir, basename + '.xml')
@@ -1273,6 +1332,10 @@ class MainWindow(QMainWindow, WindowMixin):
                 if self.defaultSaveDir is not None:
                     txtPath = os.path.join(self.defaultSaveDir, basename + '.txt')
                     self.loadCLSFile(txtPath)
+            elif self.task_mode == 3:
+                if self.defaultSaveDir is not None:
+                    maskPath = os.path.join(self.defaultSaveDir, basename + '.png')
+                    self.loadBRUFile(maskPath)
 
             return True
         return False
@@ -1300,15 +1363,15 @@ class MainWindow(QMainWindow, WindowMixin):
         h1 = self.centralWidget().height() - e
         a1 = w1 / h1
         # Calculate a new scale value based on the pixmap's aspect ratio.
-        w2 = self.canvas.pixmap.width() - 0.0
-        h2 = self.canvas.pixmap.height() - 0.0
+        w2 = self.canvas.bg_image.width() - 0.0
+        h2 = self.canvas.bg_image.height() - 0.0
         a2 = w2 / h2
         return w1 / w2 if a2 >= a1 else h1 / h2
 
     def scaleFitWidth(self):
         # The epsilon does not seem to work too well here.
         w = self.centralWidget().width() - 2.0
-        return w / self.canvas.pixmap.width()
+        return w / self.canvas.bg_image.width()
 
     def closeEvent(self, event):
         if not self.mayContinue():
@@ -1482,8 +1545,8 @@ class MainWindow(QMainWindow, WindowMixin):
 
     def openNextImg(self, _value=False):
         # Proceding next image without dialog if having any label
-        if self.autoSaving is True and self.defaultSaveDir is not None:
-            if self.dirty is True:
+        if self.autoSaving is True and self.defaultSaveDir is not None and not self.image.isNull():
+            if self.dirty is True or self.task_mode == 3:
                 self.saveFile()
 
        # if not self.mayContinue():
@@ -1536,12 +1599,14 @@ class MainWindow(QMainWindow, WindowMixin):
             else:
                 self._saveFile(self.filename if self.labelFile
                                else self.saveFileDialog())
+        elif self.task_mode == 3:
+            self._saveFile(self.filename)
         else:
             imgFileName = os.path.basename(self.filename)
-            if self.task_mode == 0 or self.task_mode == 1:
+            if self.task_mode in [0,1]:
                 savedFileName = os.path.splitext(
                 imgFileName)[0] + LabelFile.suffix
-            elif self.task_mode == 2:
+            elif self.task_mode in [2,3]:
                 savedFileName = os.path.splitext(
                 imgFileName)[0] + '.txt'
             savedPath = os.path.join(
@@ -1587,13 +1652,13 @@ class MainWindow(QMainWindow, WindowMixin):
 
     # Message Dialogs. #
     def hasLabels(self):
-        if self.task_mode == 0 or self.task_mode == 1:
+        if self.task_mode in [0,1]:
             if not self.itemsToShapes:
                 # self.errorMessage(u'No objects labeled',
                 # u'You must label at least one object to save the file.')
                 return False
             return True
-        elif self.task_mode == 2:
+        elif self.task_mode in [2,3]:
             if not self.currentItemLabels:
                 return False
             return True
@@ -1686,14 +1751,16 @@ class MainWindow(QMainWindow, WindowMixin):
                     # RGBA
                     if len(line) == 4:
                         self.label_color_map.append(
-                            QColor(line[0], line[1], line[2], line[3]))
+                            [line[0], line[1], line[2], line[3]])
                     elif len(line) == 3:
                         self.label_color_map.append(
-                            QColor(line[0], line[1], line[2], 128))
+                            [line[0], line[1], line[2], 50])
                     else:
                         print('the num of color is wrong')
                 self.has_defined_color_map = True
-                print(self.label_color_map)
+        else:
+            self.label_color_map = [color+[50] for color in COLORMAP.values()]
+            print(self.label_color_map)
     def loadPredefinedCLSClasses(self):
         self.labelHist = []
         predefined_classes_path = os.path.join(

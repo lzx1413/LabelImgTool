@@ -4,7 +4,7 @@ import re
 
 
 class SettingDialog(QtGui.QDialog):
-    enable_color_map = False
+    enable_color_map = True
     label_font_size = 10
     task_mode = 0 #0=det, 1=seg, 2=cls
 
@@ -29,11 +29,14 @@ class SettingDialog(QtGui.QDialog):
         self.DET_mode_rb.clicked.connect(self.DET_model_selected)
         self.SEG_mode_rb = QtGui.QRadioButton("SEG Mode")
         self.SEG_mode_rb.clicked.connect(self.SEG_model_selected)
+        self.BRU_mode_rb = QtGui.QRadioButton("BRU Mode")
+        self.BRU_mode_rb.clicked.connect(self.BRU_model_selected)
 
         vbox = QtGui.QVBoxLayout()
         vbox.addWidget(self.CLS_mode_rb)
         vbox.addWidget(self.DET_mode_rb)
         vbox.addWidget(self.SEG_mode_rb)
+        vbox.addWidget(self.BRU_mode_rb)
         vbox.addStretch(True)
         self.modegroupBox.setLayout(vbox)
         return self.modegroupBox
@@ -69,6 +72,16 @@ class SettingDialog(QtGui.QDialog):
         vbox.addStretch(True)
         self.clsgroupBox.setLayout(vbox)
         return self.clsgroupBox
+    def createBRUoptGroup(self):
+        self.brugroupBox = QtGui.QGroupBox("& Brush options")
+        #self.single_label_rb = QtGui.QRadioButton("single label")
+        #self.multi_label_rb = QtGui.QRadioButton("multi label")
+        vbox = QtGui.QVBoxLayout()
+        #vbox.addWidget(self.single_label_rb)
+        #vbox.addWidget(self.multi_label_rb)
+        vbox.addStretch(True)
+        self.brugroupBox.setLayout(vbox)
+        return self.brugroupBox
 
     def createSEGoptGroup(self):
         self.seggroupBox = QtGui.QGroupBox("& SEG options")
@@ -94,6 +107,7 @@ class SettingDialog(QtGui.QDialog):
         grid.addWidget(self.createDEToptGroup(),1,0)
         grid.addWidget(self.createCLSoptGroup(),2,0)
         grid.addWidget(self.createSEGoptGroup(),3,0)
+        grid.addWidget(self.createBRUoptGroup(),4,0)
         if self.__class__.task_mode == 0:
             self.DET_mode_rb.setChecked(True)
             self.DET_model_selected()
@@ -103,6 +117,9 @@ class SettingDialog(QtGui.QDialog):
         elif self.__class__.task_mode == 2:
             self.CLS_mode_rb.setChecked(True)
             self.CLS_model_selected()
+        elif self.__class__.task_mode == 3:
+            self.BRU_mode_rb.setChecked(True)
+            self.BRU_model_selected()
         buttonBox = QtGui.QDialogButtonBox(parent=self)
         buttonBox.setOrientation(QtCore.Qt.Horizontal)
         buttonBox.setStandardButtons(
@@ -121,16 +138,26 @@ class SettingDialog(QtGui.QDialog):
         self.clsgroupBox.setDisabled(False)
         self.detgroupBox.setDisabled(True)
         self.seggroupBox.setDisabled(True)
+        self.brugroupBox.setDisabled(True)
 
     def DET_model_selected(self):
         self.__class__.task_mode = 0
         self.detgroupBox.setDisabled(False)
         self.clsgroupBox.setDisabled(True)
         self.seggroupBox.setDisabled(True)
+        self.brugroupBox.setDisabled(True)
 
     def SEG_model_selected(self):
         self.__class__.task_mode = 1
         self.seggroupBox.setDisabled(False)
+        self.detgroupBox.setDisabled(True)
+        self.clsgroupBox.setDisabled(True)
+        self.brugroupBox.setDisabled(True)
+
+    def BRU_model_selected(self):
+        self.__class__.task_mode = 3
+        self.brugroupBox.setDisabled(False)
+        self.seggroupBox.setDisabled(True)
         self.detgroupBox.setDisabled(True)
         self.clsgroupBox.setDisabled(True)
 
@@ -154,4 +181,6 @@ class SettingDialog(QtGui.QDialog):
 
         elif self.__class__.task_mode == 2:
             return {'mode': 2}
+        elif self.__class__.task_mode == 3:
+            return {'mode': 3}
 
