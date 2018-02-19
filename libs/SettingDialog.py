@@ -7,6 +7,7 @@ class SettingDialog(QtGui.QDialog):
     enable_color_map = True
     label_font_size = 10
     task_mode = 0 #0=det, 1=seg, 2=cls
+    instance_seg_flag = False
 
 
     def __init__(self, parent,config):
@@ -44,6 +45,11 @@ class SettingDialog(QtGui.QDialog):
     def createDEToptGroup(self):
         self.detgroupBox = QtGui.QGroupBox("& DET options")
         self.enable_show_label_cb = QtGui.QCheckBox('enable show label name')
+        self.instance_seg_label_cb = QtGui.QCheckBox('set instance seg')
+        self.instance_seg_label_cb.setChecked(self.__class__.instance_seg_flag)
+        self.instance_seg_label_cb.stateChanged.connect(self.change_instance_seg_label)
+
+
         self.label_font_size_sl = QtGui.QSlider(QtCore.Qt.Horizontal)
         self.label_font_size_sl.setRange(5,50)
         self.label_font_size_sp = QtGui.QSpinBox()
@@ -55,6 +61,7 @@ class SettingDialog(QtGui.QDialog):
         self.label_font_size_sl.setValue(self.__class__.label_font_size)
         vbox = QtGui.QVBoxLayout()
         vbox.addWidget(self.enable_show_label_cb)
+        vbox.addWidget(self.instance_seg_label_cb)
         vbox.addWidget(QtGui.QLabel('label font size'))
         vbox.addWidget(self.label_font_size_sl)
         vbox.addWidget(self.label_font_size_sp)
@@ -166,6 +173,11 @@ class SettingDialog(QtGui.QDialog):
             self.__class__.enable_color_map = True
         else:
             self.__class__.enable_color_map = False
+    def change_instance_seg_label(self,state):
+        if state == QtCore.Qt.Checked:
+            self.__class__.instance_seg_flag = True
+        else:
+            self.__class__.instance_seg_flag = False
     def change_label_font_size(self,value):
         self.__class__.label_font_size = value
 
