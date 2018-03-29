@@ -45,9 +45,6 @@ class SettingDialog(QtGui.QDialog):
     def createDEToptGroup(self):
         self.detgroupBox = QtGui.QGroupBox("& DET options")
         self.enable_show_label_cb = QtGui.QCheckBox('enable show label name')
-        self.instance_seg_label_cb = QtGui.QCheckBox('set instance seg')
-        self.instance_seg_label_cb.setChecked(self.__class__.instance_seg_flag)
-        self.instance_seg_label_cb.stateChanged.connect(self.change_instance_seg_label)
 
 
         self.label_font_size_sl = QtGui.QSlider(QtCore.Qt.Horizontal)
@@ -61,7 +58,6 @@ class SettingDialog(QtGui.QDialog):
         self.label_font_size_sl.setValue(self.__class__.label_font_size)
         vbox = QtGui.QVBoxLayout()
         vbox.addWidget(self.enable_show_label_cb)
-        vbox.addWidget(self.instance_seg_label_cb)
         vbox.addWidget(QtGui.QLabel('label font size'))
         vbox.addWidget(self.label_font_size_sl)
         vbox.addWidget(self.label_font_size_sp)
@@ -93,6 +89,9 @@ class SettingDialog(QtGui.QDialog):
     def createSEGoptGroup(self):
         self.seggroupBox = QtGui.QGroupBox("& SEG options")
         self.enable_color_map_cb = QtGui.QCheckBox('enable color map')
+        self.instance_seg_label_cb = QtGui.QCheckBox('set instance seg')
+        self.instance_seg_label_cb.setChecked(self.__class__.instance_seg_flag)
+        self.instance_seg_label_cb.stateChanged.connect(self.change_instance_seg_label)
         if self.__class__.enable_color_map:
             self.enable_color_map_cb.toggle()
         self.enable_color_map_cb.stateChanged.connect(
@@ -101,6 +100,7 @@ class SettingDialog(QtGui.QDialog):
             self.enable_color_map_cb.setChecked(True)
         vbox = QtGui.QVBoxLayout()
         vbox.addWidget(self.enable_color_map_cb)
+        vbox.addWidget(self.instance_seg_label_cb)
         vbox.addStretch(True)
         self.seggroupBox.setLayout(vbox)
         return self.seggroupBox
@@ -189,7 +189,7 @@ class SettingDialog(QtGui.QDialog):
             return {'mode': 0,'enable_color_map':self.__class__.enable_color_map,'label_font_size': self.__class__.label_font_size}
 
         elif self.__class__.task_mode == 1:
-            return {'mode': 1,'enable_color_map':self.__class__.enable_color_map}
+            return {'mode': 1,'enable_color_map':self.__class__.enable_color_map,'instance_seg_flag':self.instance_seg_flag}
 
         elif self.__class__.task_mode == 2:
             return {'mode': 2}

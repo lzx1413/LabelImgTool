@@ -84,7 +84,7 @@ class PascalVocWriter:
         bndbox['name'] = name
         self.boxlist.append(bndbox)
 
-    def addPolygon(self, shape, name):
+    def addPolygon(self, shape, name,instance_id):
         polygon = {}
         i = 0
         for point in shape:
@@ -92,17 +92,20 @@ class PascalVocWriter:
             i = i + 1
         polygon['name'] = name
         polygon['point_num'] = str(len(shape))
-        print 'point num is ', str(len(shape))
+        polygon['instance_id'] = instance_id
         self.boxlist.append(polygon)
 
     def appendObjects(self, top):
         for each_object in self.boxlist:
+            print(each_object)
             object_item = SubElement(top, 'object')
             if each_object['name']:
                 name = SubElement(object_item, 'name')
                 name.text = unicode(each_object['name'])
             pose = SubElement(object_item, 'pose')
             pose.text = "Unspecified"
+            instance_id = SubElement(object_item,'instance_id')
+            instance_id.text = str(each_object['instance_id'])
             truncated = SubElement(object_item, 'truncated')
             truncated.text = "0"
             difficult = SubElement(object_item, 'difficult')
@@ -155,19 +158,19 @@ class PascalVocReader:
     def getShapeType(self):
         return self.shape_type
 
-    def addPolygonShape(self,label,points):
+    def addPolygonShape(self,label,points,instance_id = 0):
         points = [(point[0],point[1]) for point in points]
-        self.shapes.append((label,points,None,None,1))
+        self.shapes.append((label,points,None,None,1,instance_id))
     def get_img_size(self):
         if self.image_size:
             return self.image_size
-    def addShape(self, label, rect):
+    def addShape(self, label, rect,instance_id = 0):
         xmin = rect[0]
         ymin = rect[1]
         xmax = rect[2]
         ymax = rect[3]
         points = [(xmin, ymin), (xmin, ymax), (xmax, ymax), (xmax, ymin)]
-        self.shapes.append((label, points, None, None, 0))
+        self.shapes.append((label, points, None, None, 0,instance_id))
 
     def parseXML(self):
         assert self.filepath.endswith('.xml'), "Unsupport file format"
@@ -198,7 +201,9 @@ class PascalVocReader:
                     point = point.text.split(',')
                     point = [int(dot) for dot in point]
                     points.append(point)
-                self.addPolygonShape(label, points)
+                if object_iter.find('instance_id') is not None:
+                    instance_id = int(object_iter.find('instance_id').text)
+                self.addPolygonShape(label, points,instance_id)
         else:
             print 'unsupportable shape type'
 

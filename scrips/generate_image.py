@@ -2,8 +2,8 @@
 import json
 import os
 
-from libs import save_mask_image
-from libs.pascal_voc_io import PascalVocReader
+from libs import saveMaskImage
+from libs.pascalVocIO import PascalVocReader
 
 
 def get_name_dic(file_path):
@@ -32,8 +32,8 @@ def get_image(filename,label_num_dic = None):
     shapes = [format_shape(shape) for shape in raw_shapes]
     image_size = tVocParseReader.get_img_size()
     result_path = '/mask'+filename.split('/')[1].split('.')[0]+'.png'
-    mask_writer = save_mask_image.label_mask_writer(label_num_dic, result_path, image_size[0],
-                                                    image_size[1])
+    mask_writer = saveMaskImage.label_mask_writer(label_num_dic, result_path, image_size[0],
+                                                  image_size[1])
     mask_writer.save_mask_image(shapes)
 
 if __name__ == '__main__':

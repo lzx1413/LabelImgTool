@@ -32,8 +32,9 @@ class Shape(object):
     scale = 1.0
     label_font_size = 10
 
-    def __init__(self, label=None, shape_type=0, line_color=None):
+    def __init__(self, label=None, shape_type=0, line_color=None,instance_id = 0):
         self.label = label
+        self.instance_id = instance_id
         self.points = []
         self.fill = False
         self.selected = False
@@ -60,6 +61,8 @@ class Shape(object):
     def set_shape_type(self, type):
         self.shape_type = type
 
+    def set_instance_id(self,id):
+        self.instance_id = id
     def get_shape_type(self):
         return self.shape_type
 

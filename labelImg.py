@@ -18,20 +18,20 @@ from PyQt4.QtGui import *
 from libs.constants import *
 from libs.ustr import ustr
 
-from libs import RemoteDialog
+from libs import remoteDialog
 from libs.canvas import Canvas
 from libs.colorDialog import ColorDialog
 from libs.labelDialog import LabelDialog
 from libs.labelFile import LabelFile, LabelFileError
 from libs.lib import struct, newAction, newIcon, addActions, fmtShortcut
-from libs.appsettings import APPSettings
-from libs.pascal_voc_io import PascalVocReader
+from libs.appSettings import APPSettings
+from libs.pascalVocIO import PascalVocReader
 from libs.shape import Shape, DEFAULT_LINE_COLOR, DEFAULT_FILL_COLOR
 from libs.toolBar import ToolBar
 from libs.zoomWidget import ZoomWidget
 from libs.ImageManagement import loadImageThread, loadOnlineImgMul
-from libs.SettingDialog import SettingDialog
-from libs.save_mask_image import label_mask_writer
+from libs.settingDialog import SettingDialog
+from libs.saveMaskImage import label_mask_writer
 import resources
 
 __appname__ = 'labelImgPlus'
@@ -90,6 +90,9 @@ class MainWindow(QMainWindow, WindowMixin):
         self.label_color_map_path = None
         self.has_defined_color_map = False
         self.enable_color_map = True
+        #instance seg
+        self.enable_instance_seg = False
+        self.current_instance_id = 0
         # online database
         self.database_url = None
         self.connect_remote_db = None
@@ -745,12 +748,14 @@ class MainWindow(QMainWindow, WindowMixin):
                 Shape.label_font_size = self.label_font_size
                 if self.canvas:
                     self.canvas.update()
+            elif self.task_mode == 1:
+                self.enable_instance_seg = setting_state['instance_seg_flag']
             self.activeTaskMode(setting_state)
             print 'change mode to',setting_state
         settings_dialog.destroy()
 
     def setRemoteUrl(self):
-        setRemoteUrldialog = RemoteDialog.SetRemoteDialog(parent=self)
+        setRemoteUrldialog = remoteDialog.SetRemoteDialog(parent=self)
         if setRemoteUrldialog.exec_():
             self.database_url = 'http://' + setRemoteUrldialog.get_remote_url()
             self.remoteMode = setRemoteUrldialog.is_in_remote_mode()
@@ -1031,8 +1036,9 @@ class MainWindow(QMainWindow, WindowMixin):
     def loadLabels(self, shapes):
         s = []
         if self.task_mode in [0,1]:
-            for label, points, line_color, fill_color, shape_type in shapes:
-                shape = Shape(label=label, shape_type=shape_type)
+            print(shapes)
+            for label, points, line_color, fill_color, shape_type, instance_id in shapes:
+                shape = Shape(label=label, shape_type=shape_type,instance_id=instance_id)
                 assert isinstance(shape_type, int)
                 if self.task_mode == 0 and shape_type == 0 or self.task_mode == 1 and shape_type == 1:
                     for x, y in points:
@@ -1065,6 +1071,7 @@ class MainWindow(QMainWindow, WindowMixin):
             return dict(
                 label=unicode(
                     s.label),
+                instance_id=s.instance_id,
                 line_color=s.line_color.getRgb() if s.line_color != self.lineColor else None,
                 fill_color=s.fill_color.getRgb() if s.fill_color != self.fillColor else None,
                 points=[
@@ -1177,6 +1184,7 @@ class MainWindow(QMainWindow, WindowMixin):
         text = self.labelDialog.popUp()
         text = str(text)
         if text is not None:
+
             if str(text) in self.label_fre_dic:
                 self.label_fre_dic[str(text)] += 1
             else:
@@ -1186,7 +1194,14 @@ class MainWindow(QMainWindow, WindowMixin):
                 fill_color = self.label_color_map[
                     self.label_num_dic[text]]
                 new_shape.fill_color = QColor(fill_color[0],fill_color[1],fill_color[2],fill_color[3])
-            self.addLabel(self.canvas.setLastLabel(text))
+            if self.enable_instance_seg:
+                yes, no = QMessageBox.Yes, QMessageBox.No
+                msg = u'Is it a new instance with id '+str(self.current_instance_id+1)
+                if yes == QMessageBox.question(self, u'Attention', msg, yes | no):
+                    new_shape.set_instance_id(self.current_instance_id+1)
+                else:
+                    new_shape.set_instance_id(self.current_instance_id)
+            self.addLabel(new_shape)
             if self.beginner():  # Switch to edit mode.
                 self.canvas.setEditing(True)
                 self.actions.createMode.setEnabled(True)
@@ -1207,6 +1222,7 @@ class MainWindow(QMainWindow, WindowMixin):
                 item = QListWidgetItem(text)
                 self.label_color_list.addItem(item)
                 self.labelHist.append(text)
+
         else:
             # self.canvas.undoLastLine()
             self.canvas.resetAllLines()
