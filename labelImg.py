@@ -890,6 +890,7 @@ class MainWindow(QMainWindow, WindowMixin):
         self.filename = None
         self.imageData = None
         self.labelFile = None
+        self.current_instance_id = 0
         self.canvas.resetState()
 
     def currentItem(self):
@@ -1853,6 +1854,8 @@ class MainWindow(QMainWindow, WindowMixin):
 
         tVocParseReader = PascalVocReader(filename)
         shapes = tVocParseReader.getShapes()
+        instance_ids = [shape[-1] for shape in shapes]
+        self.current_instance_id = max(instance_ids)
         self.loadLabels(shapes)
         self.shape_type = tVocParseReader.getShapeType()
 
