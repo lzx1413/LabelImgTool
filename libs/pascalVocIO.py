@@ -104,8 +104,9 @@ class PascalVocWriter:
                 name.text = unicode(each_object['name'])
             pose = SubElement(object_item, 'pose')
             pose.text = "Unspecified"
-            instance_id = SubElement(object_item,'instance_id')
-            instance_id.text = str(each_object['instance_id'])
+            if 'instance_id' in each_object.keys():
+                instance_id = SubElement(object_item,'instance_id')
+                instance_id.text = str(each_object['instance_id'])
             truncated = SubElement(object_item, 'truncated')
             truncated.text = "0"
             difficult = SubElement(object_item, 'difficult')
