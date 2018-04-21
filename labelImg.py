@@ -121,7 +121,7 @@ class MainWindow(QMainWindow, WindowMixin):
         self.label_num_dic = {}
         self.lastOpenDir = None
         date = time.strftime('%Y_%m_%d_%H', time.localtime(time.time()))
-        self.loadFilePath = 'database/pics/' + date + '/'
+        self.loadFilePath = os.path.join('database/pics/',date)
 
         # Whether we need to save or not.
         self.dirty = False
@@ -1089,8 +1089,8 @@ class MainWindow(QMainWindow, WindowMixin):
                     print type(key)
                 json.dump(self.label_num_dic, label_num_file)
             # the mask image will be save as file_mask.png etc.
-            result_path = self.defaultSaveDir + \
-                os.path.splitext(imgFileName)[0] + '_mask.png'
+            result_path = os.path.join(self.defaultSaveDir,
+                os.path.splitext(imgFileName)[0] + '_mask.png')
             mask_writer = label_mask_writer(
                 self.label_num_dic,
                 result_path,
@@ -1102,7 +1102,7 @@ class MainWindow(QMainWindow, WindowMixin):
             try:
                 if self.usingPascalVocFormat is True:
                     
-                    savefilename = self.defaultSaveDir + os.path.splitext(imgFileName)[0] + '.xml'  # the mask image will be save as file_mask.jpg etc.
+                    savefilename = os.path.join(self.defaultSaveDir,os.path.splitext(imgFileName)[0] + '.xml')  # the mask image will be save as file_mask.jpg etc.
                     print 'savePascalVocFommat save to:' + savefilename
                     lf.savePascalVocFormat(
                         savefilename, self.image_size, shapes, unicode(
@@ -1126,13 +1126,13 @@ class MainWindow(QMainWindow, WindowMixin):
                                   u'<b>%s</b>' % e)
                 return False
         elif self.task_mode == 2:#cls mode
-            savefilename = self.defaultSaveDir + os.path.splitext(imgFileName)[0] + '.txt' # the mask image will be save as file_mask.jpg etc.
+            savefilename = os.path.join(self.defaultSaveDir + os.path.splitext(imgFileName)[0] + '.txt') # the mask image will be save as file_mask.jpg etc.
             print savefilename
             with codecs.open(savefilename,'w','utf8') as outfile:
                 for item in self.currentItemLabels:
                     outfile.write(item+'\n')
         elif self.task_mode == 3:#brush mode
-            savefilename = self.defaultSaveDir + os.path.splitext(imgFileName)[0] + '.png' # the mask image will be save as file_mask.jpg etc.
+            savefilename = os.path.join(self.defaultSaveDir + os.path.splitext(imgFileName)[0] + '.png') # the mask image will be save as file_mask.jpg etc.
             mask_img = self.canvas.get_mask_image()
             if mask_img:
                 mask_img.save(savefilename)
