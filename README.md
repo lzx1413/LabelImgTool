@@ -36,11 +36,33 @@ In order to build the resource and assets, you need to install pyqt4-dev-tools:
 
 * Ubuntu
 
+Python2 + Qt4
+
 `sudo apt-get install pyqt4-dev-tools`
+
+`sudo pip install lxml`
+
+`make qt4py2`
+
+`pip install qdarkstyle`
+
+`python labelImgTool.py`
+
+Python3 + Qt5
+
+`sudo apt-get install pyqt5-dev-tools`
+
+`sudo pip3 install lxml`
+
+`make qt5py3`
+
+`python3 labelImgTool.py`
 * Mac
    install pyqt4 with [instructions](https://robonobodojo.wordpress.com/2017/02/08/installing-pyqt4-on-mac-osx/)
 
 `sudo apt-get install python-opencv`
+
+`make qt4py2`
 
 `pip install lxml`
 
@@ -54,7 +76,15 @@ Need to download and setup [Python 2.6](https://www.python.org/downloads/windows
 
 Open cmd and go to $labelImg, 
 
+Python2 Pyqt4
+
 `$ pyrcc4 -o resources.py resources.qrc`
+
+`$ python labelImg.py`
+
+Anaconda python3 pyqt5
+
+`$ pyrcc5 -o resources.py resources.qrc`
 
 `$ python labelImg.py`
 

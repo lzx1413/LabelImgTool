@@ -43,7 +43,7 @@ from libs.settingDialog import SettingDialog
 from libs.saveMaskImage import label_mask_writer
 import resources
 
-__appname__ = 'labelImgPlus'
+__appname__ = 'labelImgTool'
 
 
 # Utility functions and classes.

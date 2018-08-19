@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 from subprocess import call
-call(["pyinstaller", "--onefile", "--windowed", "labelImg.py"])
+call(["pyinstaller", "--onefile", "--windowed", "labelImgTool.py"])
 
 # Now it is a workaround. It should use hook file
 def readlines(filename):
