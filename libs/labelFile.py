@@ -1,6 +1,6 @@
 import os.path
 import sys
-from pascalVocIO import PascalVocWriter
+from .pascalVocIO import PascalVocWriter
 from base64 import b64encode, b64decode
 
 
@@ -44,7 +44,7 @@ class LabelFile(object):
             points = shape['points']
             label = shape['label']
             if shape['shape_type'] == 0:
-                print 'add rects'
+                print('add rects')
                 bndbox = LabelFile.convertPoints2BndBox(points)
                 writer.addBndBox(
                     bndbox[0],
@@ -53,7 +53,7 @@ class LabelFile(object):
                     bndbox[3],
                     label)
             if shape['shape_type'] == 1:
-                print 'add polygons'
+                print('add polygons')
                 writer.addPolygon(points, label,instance_id=shape['instance_id'])
 
             bSave = True

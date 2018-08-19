@@ -1,10 +1,15 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
-from PyQt4.QtGui import *
-from PyQt4.QtCore import *
+try:
+    from PyQt5.QtGui import *
+    from PyQt5.QtCore import *
+    from PyQt5.QtWidgets import *
+except:
+    from PyQt4.QtGui import *
+    from PyQt4.QtCore import *
 
-from lib import distance
+from .lib import distance
 
 DEFAULT_LINE_COLOR = QColor(0, 255, 0, 128)
 DEFAULT_FILL_COLOR = QColor(255, 0, 0, 10)
@@ -69,7 +74,7 @@ class Shape(object):
     def close(self):
         assert len(self.points) > 2
         self._closed = True
-        print len(self.points)
+        print(len(self.points))
 
     def isRect(self):
         return self.shape_type == self.RECT_SHAPE

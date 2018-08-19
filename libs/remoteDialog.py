@@ -1,16 +1,21 @@
-from PyQt4 import QtGui, QtCore
+try:
+    from PyQt5 import QtGui, QtCore, QtWidgets
+    QDialog = QtWidgets.QDialog
+except ImportError:
+    from PyQt4 import QtGui, QtCore
+    QDialog = QtGui.QDialog
 import socket
 import re
 
 
-class SetRemoteDialog(QtGui.QDialog):
+class SetRemoteDialog(QDialog):
     remote_mode = True
     remote_url = ""
     dowload_thead_num = 4
     server_image_list = None
 
     def __init__(self, parent=None):
-        QtGui.QDialog.__init__(self, parent)
+        QDialog.__init__(self, parent)
         self.resize(320, 100)
         self.setWindowTitle('set remote db')
         self.remote_cb = QtGui.QCheckBox("use remote database")

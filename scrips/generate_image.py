@@ -23,10 +23,9 @@ def get_name_dic(file_path):
 def get_image(filename,label_num_dic = None):
     tVocParseReader = PascalVocReader(filename)
     raw_shapes = tVocParseReader.getShapes()
-    print raw_shapes
     def format_shape(s):
         label,points,aa,bb,c = s
-        return dict(label=unicode(label),
+        return dict(label=label,
                     points=[(int(p[0]), int(p[1])) for p in points])
 
     shapes = [format_shape(shape) for shape in raw_shapes]
@@ -38,7 +37,6 @@ def get_image(filename,label_num_dic = None):
 
 if __name__ == '__main__':
     file_list = os.listdir('img_addition')
-    print file_list
     label_num_dic = get_name_dic('label_num_dic.json')
     for file_name in file_list:
         get_image('img_addition/'+file_name,label_num_dic)

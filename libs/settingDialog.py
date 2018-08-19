@@ -1,9 +1,15 @@
-from PyQt4 import QtGui, QtCore
+try:
+    from PyQt5.QtGui import *
+    from PyQt5.QtCore import *
+    from PyQt5.QtWidgets import *
+except:
+    from PyQt4.QtGui import *
+    from PyQt4.QtCore import *
 import socket
 import re
 
 
-class SettingDialog(QtGui.QDialog):
+class SettingDialog(QDialog):
     enable_color_map = True
     label_font_size = 10
     task_mode = 0 #0=det, 1=seg, 2=cls
@@ -11,7 +17,7 @@ class SettingDialog(QtGui.QDialog):
 
 
     def __init__(self, parent,config):
-        QtGui.QDialog.__init__(self, parent)
+        QDialog.__init__(self, parent)
         self.resize(320, 240)
         self.__class__.task_mode = config['task_mode']
         self.__class__.label_font_size = config['label_font_size']
@@ -21,19 +27,19 @@ class SettingDialog(QtGui.QDialog):
         set the trask mode setting group
         :return: mode group
         '''
-        self.modegroupBox = QtGui.QGroupBox("& Task Mode")
+        self.modegroupBox = QGroupBox("& Task Mode")
         self.modegroupBox.setCheckable(True)
         self.modegroupBox.setChecked(True)
-        self.CLS_mode_rb = QtGui.QRadioButton("CLS Mode")
+        self.CLS_mode_rb = QRadioButton("CLS Mode")
         self.CLS_mode_rb.clicked.connect(self.CLS_model_selected)
-        self.DET_mode_rb = QtGui.QRadioButton("DET Mode")
+        self.DET_mode_rb = QRadioButton("DET Mode")
         self.DET_mode_rb.clicked.connect(self.DET_model_selected)
-        self.SEG_mode_rb = QtGui.QRadioButton("SEG Mode")
+        self.SEG_mode_rb = QRadioButton("SEG Mode")
         self.SEG_mode_rb.clicked.connect(self.SEG_model_selected)
-        self.BRU_mode_rb = QtGui.QRadioButton("BRU Mode")
+        self.BRU_mode_rb = QRadioButton("BRU Mode")
         self.BRU_mode_rb.clicked.connect(self.BRU_model_selected)
 
-        vbox = QtGui.QVBoxLayout()
+        vbox = QVBoxLayout()
         vbox.addWidget(self.CLS_mode_rb)
         vbox.addWidget(self.DET_mode_rb)
         vbox.addWidget(self.SEG_mode_rb)
@@ -43,22 +49,25 @@ class SettingDialog(QtGui.QDialog):
         return self.modegroupBox
 
     def createDEToptGroup(self):
-        self.detgroupBox = QtGui.QGroupBox("& DET options")
-        self.enable_show_label_cb = QtGui.QCheckBox('enable show label name')
+        self.detgroupBox = QGroupBox("& DET options")
+        self.enable_show_label_cb = QCheckBox('enable show label name')
 
 
-        self.label_font_size_sl = QtGui.QSlider(QtCore.Qt.Horizontal)
+        self.label_font_size_sl = QSlider(Qt.Horizontal)
         self.label_font_size_sl.setRange(5,50)
-        self.label_font_size_sp = QtGui.QSpinBox()
+        self.label_font_size_sp = QSpinBox()
         self.label_font_size_sp.setRange(5,50)
-        QtCore.QObject.connect(self.label_font_size_sl, QtCore.SIGNAL("valueChanged(int)"),
+        self.label_font_size_sl.valueChanged.connect(self.label_font_size_sp.setValue)
+        '''
+        QObject.connect(self.label_font_size_sl, SIGNAL("valueChanged(int)"),
 
-                               self.label_font_size_sp, QtCore.SLOT("setValue(int)"))
+                               self.label_font_size_sp, SLOT("setValue(int)"))
+        '''
         self.label_font_size_sl.valueChanged.connect(self.change_label_font_size)
         self.label_font_size_sl.setValue(self.__class__.label_font_size)
-        vbox = QtGui.QVBoxLayout()
+        vbox = QVBoxLayout()
         vbox.addWidget(self.enable_show_label_cb)
-        vbox.addWidget(QtGui.QLabel('label font size'))
+        vbox.addWidget(QLabel('label font size'))
         vbox.addWidget(self.label_font_size_sl)
         vbox.addWidget(self.label_font_size_sp)
         vbox.addStretch()
@@ -66,20 +75,20 @@ class SettingDialog(QtGui.QDialog):
         return self.detgroupBox
 
     def createCLSoptGroup(self):
-        self.clsgroupBox = QtGui.QGroupBox("& CLS options")
+        self.clsgroupBox = QGroupBox("& CLS options")
         #self.single_label_rb = QtGui.QRadioButton("single label")
         #self.multi_label_rb = QtGui.QRadioButton("multi label")
-        vbox = QtGui.QVBoxLayout()
+        vbox = QVBoxLayout()
         #vbox.addWidget(self.single_label_rb)
         #vbox.addWidget(self.multi_label_rb)
         vbox.addStretch(True)
         self.clsgroupBox.setLayout(vbox)
         return self.clsgroupBox
     def createBRUoptGroup(self):
-        self.brugroupBox = QtGui.QGroupBox("& Brush options")
+        self.brugroupBox = QGroupBox("& Brush options")
         #self.single_label_rb = QtGui.QRadioButton("single label")
         #self.multi_label_rb = QtGui.QRadioButton("multi label")
-        vbox = QtGui.QVBoxLayout()
+        vbox = QVBoxLayout()
         #vbox.addWidget(self.single_label_rb)
         #vbox.addWidget(self.multi_label_rb)
         vbox.addStretch(True)
@@ -87,9 +96,9 @@ class SettingDialog(QtGui.QDialog):
         return self.brugroupBox
 
     def createSEGoptGroup(self):
-        self.seggroupBox = QtGui.QGroupBox("& SEG options")
-        self.enable_color_map_cb = QtGui.QCheckBox('enable color map')
-        self.instance_seg_label_cb = QtGui.QCheckBox('set instance seg')
+        self.seggroupBox = QGroupBox("& SEG options")
+        self.enable_color_map_cb = QCheckBox('enable color map')
+        self.instance_seg_label_cb = QCheckBox('set instance seg')
         self.instance_seg_label_cb.setChecked(self.__class__.instance_seg_flag)
         self.instance_seg_label_cb.stateChanged.connect(self.change_instance_seg_label)
         if self.__class__.enable_color_map:
@@ -98,7 +107,7 @@ class SettingDialog(QtGui.QDialog):
             self.change_color_enable_state)
         if self.__class__.enable_color_map:
             self.enable_color_map_cb.setChecked(True)
-        vbox = QtGui.QVBoxLayout()
+        vbox = QVBoxLayout()
         vbox.addWidget(self.enable_color_map_cb)
         vbox.addWidget(self.instance_seg_label_cb)
         vbox.addStretch(True)
@@ -107,9 +116,9 @@ class SettingDialog(QtGui.QDialog):
 
 
     def init_UI(self):
-        main_v_layout = QtGui.QVBoxLayout()
+        main_v_layout = QVBoxLayout()
 
-        grid = QtGui.QGridLayout()
+        grid = QGridLayout()
         grid.addWidget(self.createModeGroup(),0,0)
         grid.addWidget(self.createDEToptGroup(),1,0)
         grid.addWidget(self.createCLSoptGroup(),2,0)
@@ -127,15 +136,15 @@ class SettingDialog(QtGui.QDialog):
         elif self.__class__.task_mode == 3:
             self.BRU_mode_rb.setChecked(True)
             self.BRU_model_selected()
-        buttonBox = QtGui.QDialogButtonBox(parent=self)
-        buttonBox.setOrientation(QtCore.Qt.Horizontal)
+        buttonBox = QDialogButtonBox(parent=self)
+        buttonBox.setOrientation(Qt.Horizontal)
         buttonBox.setStandardButtons(
-            QtGui.QDialogButtonBox.Cancel | QtGui.QDialogButtonBox.Ok)
+            QDialogButtonBox.Cancel | QDialogButtonBox.Ok)
         buttonBox.accepted.connect(self.accept)
         buttonBox.rejected.connect(self.reject)
         main_v_layout.addLayout(grid)
-        spacerItem = QtGui.QSpacerItem(
-            20, 48, QtGui.QSizePolicy.Minimum, QtGui.QSizePolicy.Expanding)
+        spacerItem = QSpacerItem(
+            20, 48, QSizePolicy.Minimum, QSizePolicy.Expanding)
         main_v_layout.addItem(spacerItem)
         main_v_layout.addWidget(buttonBox)
         self.setLayout(main_v_layout)
@@ -169,12 +178,12 @@ class SettingDialog(QtGui.QDialog):
         self.clsgroupBox.setDisabled(True)
 
     def change_color_enable_state(self, state):
-        if state == QtCore.Qt.Checked:
+        if state == Qt.Checked:
             self.__class__.enable_color_map = True
         else:
             self.__class__.enable_color_map = False
     def change_instance_seg_label(self,state):
-        if state == QtCore.Qt.Checked:
+        if state == Qt.Checked:
             self.__class__.instance_seg_flag = True
         else:
             self.__class__.instance_seg_flag = False

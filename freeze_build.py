@@ -14,7 +14,7 @@ lines = readlines('labelImg.spec')
 for ind, line in enumerate(lines):
     if 'hiddenimports' in line:
         lines[ind] = "\t\t\t hiddenimports = ['cv2', 'json', 'lxml.etree', 'lxml', 'etree', 'xml.etree.ElementTree'],\n"
-        print lines[ind]
+        print(lines[ind])
 
 FILE = open('labelImg.spec', "w")
 FILE.writelines(lines)

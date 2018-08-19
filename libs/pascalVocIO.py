@@ -3,7 +3,7 @@ from xml.etree import ElementTree
 from xml.etree.ElementTree import Element, SubElement
 from xml.dom import minidom
 from lxml import etree
-
+from .ustr import ustr
 
 class PascalVocWriter:
 
@@ -29,7 +29,7 @@ class PascalVocWriter:
         """
         rough_string = ElementTree.tostring(elem, 'utf8')
         root = etree.fromstring(rough_string)
-        return etree.tostring(root,pretty_print=True)
+        return etree.tostring(root,pretty_print=True, encoding="unicode")
 
     def genXML(self):
         """
@@ -101,7 +101,7 @@ class PascalVocWriter:
             object_item = SubElement(top, 'object')
             if each_object['name']:
                 name = SubElement(object_item, 'name')
-                name.text = unicode(each_object['name'])
+                name.text = ustr(each_object['name'])
             pose = SubElement(object_item, 'pose')
             pose.text = "Unspecified"
             if 'instance_id' in each_object.keys():
@@ -123,11 +123,11 @@ class PascalVocWriter:
                 ymax.text = str(each_object['ymax'])
             elif self.shape_type == 'POLYGON':
                 polygon = SubElement(object_item, 'polygon')
-                for i in xrange(int(each_object['point_num'])):
+                for i in range(int(each_object['point_num'])):
                     point = SubElement(polygon, 'point' + str(i))
                     point.text = str(
                         int(each_object[i][0])) + ',' + str(int(each_object[i][1]))
-                    print i, point.text
+                    print(i, point.text)
 
     def save(self, targetFile=None):
         root = self.genXML()
@@ -206,7 +206,7 @@ class PascalVocReader:
                     instance_id = int(object_iter.find('instance_id').text)
                 self.addPolygonShape(label, points,instance_id)
         else:
-            print 'unsupportable shape type'
+            print('unsupportable shape type')
 
 
 # tempParseReader = PascalVocReader('test.xml')
