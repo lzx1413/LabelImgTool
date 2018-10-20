@@ -1204,7 +1204,7 @@ class MainWindow(QMainWindow, WindowMixin):
 
         text = self.labelDialog.popUp()
         text = str(text)
-        if text is not None:
+        if text is not None and text is not 'None':
 
             if str(text) in self.label_fre_dic:
                 self.label_fre_dic[str(text)] += 1
@@ -1219,7 +1219,8 @@ class MainWindow(QMainWindow, WindowMixin):
                 yes, no = QMessageBox.Yes, QMessageBox.No
                 msg = u'Is it a new instance with id ' + str(self.current_instance_id + 1)
                 if yes == QMessageBox.question(self, u'Attention', msg, yes | no):
-                    new_shape.set_instance_id(self.current_instance_id + 1)
+                    self.current_instance_id += 1
+                    new_shape.set_instance_id(self.current_instance_id)
                 else:
                     new_shape.set_instance_id(self.current_instance_id)
             self.addLabel(new_shape)

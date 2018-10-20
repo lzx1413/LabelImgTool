@@ -72,9 +72,8 @@ class Shape(object):
         return self.shape_type
 
     def close(self):
-        assert len(self.points) > 2
-        self._closed = True
-        print(len(self.points))
+        if len(self.points) > 2:
+            self._closed = True
 
     def isRect(self):
         return self.shape_type == self.RECT_SHAPE

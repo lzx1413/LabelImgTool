@@ -93,7 +93,8 @@ class LabelDialog(QDialog):
             self.accept()
 
     def postProcess(self):
-        self.edit.setText(self.edit.text().trimmed())
+        #self.edit.setText(self.edit.text().trimmed())
+        self.edit.setText(self.edit.text())
 
     def popUp(self, text='', move=True):
         self.edit.setText(text)
