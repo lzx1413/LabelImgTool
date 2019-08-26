@@ -28,6 +28,10 @@ Brush SEG mode(in development: brush branch)
 
 ![](screenshot/brush_task.jpg)
 
+## Release software for windows
+[baiduyun](https://pan.baidu.com/s/1iREYsJiQCzPPZGf6dFvauw)
+[googledriver](https://drive.google.com/open?id=118bUKQGlfwLgRTpptNzgBijJneInvw7T)
+
 ## Build source and use it
 
 Requires at least [Python 2.6](http://www.python.org/getit/) and has been tested with [PyQt4.8](http://www.riverbankcomputing.co.uk/software/pyqt/intro).
@@ -50,8 +54,7 @@ In order to build the resource and assets, you need to install pyqt4-dev-tools:
 
 * Windows
 
-Need to download and setup [Python 2.6](https://www.python.org/downloads/windows/) or later and [PyQt4](https://www.riverbankcomputing.com/software/pyqt/download),lxml,qdarkstyle. You can also try to download the whole neccessary executable files from [my drive](https://copy.com/oyYjFzJwPb4tKl93) and install them.
-
+Need to download and setup [Python 2.6](https://www.python.org/downloads/windows/) or later and [PyQt4](https://www.riverbankcomputing.com/software/pyqt/download),lxml,qdarkstyle.
 Open cmd and go to $labelImg, 
 
 `$ pyrcc4 -o resources.py resources.qrc`
